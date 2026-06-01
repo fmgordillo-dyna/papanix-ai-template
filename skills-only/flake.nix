@@ -1,9 +1,9 @@
 # skills-only — install a curated set of AI skills, no MCP.
 #
 # Picks specific skills from the papanix-ai catalog and installs them
-# ephemerally into .claude/ and .opencode/ on `nix develop` entry.
-# .claude/ and .opencode/ are wiped on shell exit (see warning in
-# papanix-ai/docs/how-skill-install-works.md).
+# ephemerally into .claude/ on `nix develop` entry.
+# .claude/ is wiped on shell exit (the default targets only enable claude;
+# opencode is opt-in — pass a custom `targets` to lib.skills.mkShellHook).
 #
 # List available skill IDs with:
 #   nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog \

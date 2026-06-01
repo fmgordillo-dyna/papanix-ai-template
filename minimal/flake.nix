@@ -5,7 +5,7 @@
 # Nothing wiped on shell exit.
 #
 # Use this when you want the Dynatrace internal CLIs
-# (acli-pii, aimgr, dtctl, junoctl) inside `nix develop`,
+# (acli-pii, bbctl, dtctl, junoctl) inside `nix develop`,
 # but you manage your AI tooling separately (or not at all).
 {
   description = "papanix-ai: minimal devShell — CLIs only, no skills, no MCP";
@@ -32,7 +32,7 @@
         devShells.default = pkgs.mkShellNoCC {
           # All four CLIs on PATH. Drop the `.default` and list individual
           # packages if you only want a subset:
-          #   packages = with papanix-ai.packages.${system}; [ dtctl aimgr ];
+          #   packages = with papanix-ai.packages.${system}; [ dtctl bbctl ];
           packages = [papanix-ai.packages.${system}.default];
         };
       }

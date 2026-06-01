@@ -29,9 +29,10 @@
           # enable = ["create-epic" "dt-github"];
         };
 
-        # NOTE: MCP servers wired into .mcp.json on shell entry, wiped on exit.
-        # Override `servers` to add/replace entries; defaults ship Dynatrace MCP
-        # which needs DT_API_TOKEN + DT_ENVIRONMENT in your env.
+        # NOTE: MCP servers wired into .mcp.json and opencode.jsonc on shell
+        # entry, wiped on exit. Override `servers` to add/replace entries;
+        # defaults ship Dynatrace MCP (needs DT_API_TOKEN + DT_ENVIRONMENT)
+        # and Juno MCP (no env vars required).
         mcpServers = papanix-ai.lib.mcp.defaultServers;
 
         # NOTE: Claude Code plugin marketplaces wired into .claude/settings.json

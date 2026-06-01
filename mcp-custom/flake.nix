@@ -1,10 +1,10 @@
 # mcp-custom — skills + MCP with an extra server added.
 #
-# Shows how to extend the default MCP server set (Dynatrace MCP) with
-# your own entry — e.g. a local stdio server or a third-party HTTP MCP —
+# Shows how to extend the default MCP server set (Dynatrace MCP + Juno MCP)
+# with your own entry — e.g. a local stdio server or a third-party HTTP MCP —
 # while keeping the ephemeral install/wipe semantics.
 #
-# Both .claude/.opencode/ AND .mcp.json are wiped on shell exit.
+# Both .claude/ AND .mcp.json + opencode.jsonc are wiped on shell exit.
 {
   description = "papanix-ai: devShell with all skills + custom MCP servers";
 
@@ -30,7 +30,7 @@
         };
 
         # NOTE: Extend the default server set instead of replacing it,
-        # so you keep Dynatrace MCP and add your own.
+        # so you keep Dynatrace MCP + Juno MCP and add your own.
         # Schema is whatever mcp-servers-nix accepts (claude-code flavor).
         mcpServers =
           papanix-ai.lib.mcp.defaultServers

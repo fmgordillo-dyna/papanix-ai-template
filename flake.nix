@@ -24,7 +24,7 @@
       };
       minimal = {
         description = ''
-          CLIs only (acli-pii, aimgr, dtctl, junoctl) on PATH.
+          CLIs only (acli-pii, bbctl, dtctl, junoctl) on PATH.
           No skills, no MCP. Nothing wiped on shell exit.
         '';
         path = ./minimal;

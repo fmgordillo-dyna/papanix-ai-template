@@ -40,18 +40,19 @@ is purely a registry of starter `flake.nix` files.
 ## papanix-ai surface used here
 
 - `papanix-ai.packages.${system}.default` — bundle of PAPA CLIs
-  (`acli-pii`, `aimgr`, `dtctl`, `junoctl`).
+  (`acli-pii`, `bbctl`, `dtctl`, `junoctl`).
 - `papanix-ai.lib.skills.mkBundle { pkgs; enable | enableAll; skills? }` —
   builds the skill bundle. See
   `vendor/agent-skills-nix/lib/default.nix` in the upstream repo for
   the skill schema.
 - `papanix-ai.lib.skills.mkShellHook { pkgs; bundle; }` — installs skills
-  into `.claude/` and `.opencode/`, registers an EXIT trap that wipes
-  them.
+  into `.claude/` (default targets; opencode is opt-in), registers an EXIT
+  trap that wipes them.
 - `papanix-ai.lib.mcp.defaultServers` — default MCP server set
-  (Dynatrace MCP). Needs `DT_API_TOKEN` + `DT_ENVIRONMENT`.
+  (Dynatrace MCP + Juno MCP). Dynatrace MCP needs `DT_API_TOKEN` + `DT_ENVIRONMENT`;
+  Juno MCP requires no env vars.
 - `papanix-ai.lib.mcp.mkShellHook { pkgs; servers; }` — writes
-  `.mcp.json`, wipes on exit.
+  `.mcp.json` and `opencode.jsonc`, wipes on exit.
 - `papanix-ai.lib.claudeSettings.defaultMarketplaces` — default Claude
   Code plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
   Each entry is `{ name; source; path?; }`; `path` is a vendored flake
