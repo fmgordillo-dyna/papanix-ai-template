@@ -33,6 +33,12 @@
         # Override `servers` to add/replace entries; defaults ship Dynatrace MCP
         # which needs DT_API_TOKEN + DT_ENVIRONMENT in your env.
         mcpServers = papanix-ai.lib.mcp.defaultServers;
+
+        # NOTE: Claude Code plugin marketplaces wired into .claude/settings.json
+        # on shell entry, wiped on exit. Claude Code clones each marketplace and
+        # installs the listed plugins on first project trust.
+        # Defaults register papa-ai-knowledgebase + rnd-ai-knowledgebase.
+        pluginMarketplaces = papanix-ai.lib.plugins.defaultMarketplaces;
       in {
         # Here lives `dtctl` and frieds to use individually
         packages = papanix-ai.packages.${system};
@@ -41,12 +47,20 @@
         devShells.default = pkgs.mkShellNoCC {
           # We make `dtctl` and other packages available at PATH level
           packages = [papanix-ai.packages.${system}.default];
-          # Run the SKILL + MCP installer
+          # Run the SKILL + MCP + Claude plugins installers
           shellHook = ''
             ${papanix-ai.lib.mkShellHook {inherit pkgs bundle;}}
             ${papanix-ai.lib.mcp.mkShellHook {
               inherit pkgs;
               servers = mcpServers;
+            }}
+            ${papanix-ai.lib.plugins.mkShellHook {
+              inherit pkgs;
+              marketplaces = pluginMarketplaces;
+              # NOTE: Pick individual plugins ("<mpKey>/<pluginName>"):
+              # enable = ["papa/papa-jira" "rnd/dt-github"];
+              # Or bulk-enable everything from the listed marketplaces:
+              enableAll = true;
             }}
           '';
         };

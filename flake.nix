@@ -43,6 +43,14 @@
         '';
         path = ./mcp-custom;
       };
+      plugins-custom = {
+        description = ''
+          All skills + curated Claude Code plugin marketplaces.
+          Generates project-scope .claude/settings.json that auto-enables
+          plugins from papa-ai-knowledgebase / rnd-ai-knowledgebase.
+        '';
+        path = ./plugins-custom;
+      };
       library = {
         description = ''
           Consume papanix-ai purely as a library (skill catalog).

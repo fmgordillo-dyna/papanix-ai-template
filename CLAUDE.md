@@ -14,10 +14,11 @@ is purely a registry of starter `flake.nix` files.
 ## Layout
 
 - `flake.nix` — registers each template under `templates.<name>`.
-- `default/` — full setup: CLIs + skills + Dynatrace MCP.
+- `default/` — full setup: CLIs + skills + Dynatrace MCP + Claude plugins.
 - `minimal/` — CLIs only, no shell hook, nothing wiped.
-- `skills-only/` — curated skill subset, no MCP.
+- `skills-only/` — curated skill subset, no MCP, no plugins.
 - `mcp-custom/` — all skills + extended MCP server set.
+- `plugins-custom/` — all skills + curated Claude Code plugin marketplaces.
 - `library/` — skills only, no CLIs, demonstrates BYO packages.
 
 ## When editing a template
@@ -49,6 +50,17 @@ is purely a registry of starter `flake.nix` files.
   (Dynatrace MCP). Needs `DT_API_TOKEN` + `DT_ENVIRONMENT`.
 - `papanix-ai.lib.mcp.mkShellHook { pkgs; servers; }` — writes
   `.mcp.json`, wipes on exit.
+- `papanix-ai.lib.plugins.defaultMarketplaces` — default Claude Code
+  plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
+  Each entry is `{ name; source; path?; }`; `path` is a vendored flake
+  input used for hermetic plugin enumeration via
+  `.claude-plugin/marketplace.json`.
+- `papanix-ai.lib.plugins.mkShellHook { pkgs; marketplaces?; enable?; enableAll?; }` —
+  writes project-scope `.claude/settings.json` with
+  `extraKnownMarketplaces` + `enabledPlugins`, wipes on exit. `enable`
+  takes `"<mpKey>/<pluginName>"` strings; `enableAll = true` enables
+  every plugin in every marketplace; `enableAll = ["rnd"]` bulk-enables
+  one marketplace.
 - `papanix-ai.lib.mkEphemeralShellHook` — composer mentioned in
   `library/flake.nix` for combining multiple ephemeral hooks under one
   EXIT trap.
@@ -70,7 +82,8 @@ cd /tmp/scratch && nix develop --command true
 ## Don't
 
 - Don't add CI, build outputs, or non-template Nix code.
-- Don't commit `.claude/`, `.opencode/`, or `.mcp.json` — they are
-  ephemeral artifacts of `mkShellHook`.
+- Don't commit `.claude/`, `.opencode/`, `.mcp.json`, or
+  `.claude/settings.json` — they are ephemeral artifacts of
+  `mkShellHook`.
 - Don't pin `papanix-ai` to a commit inside templates unless asked;
   templates track the branch tip on purpose.
