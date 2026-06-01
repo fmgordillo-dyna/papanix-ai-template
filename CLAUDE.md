@@ -20,6 +20,8 @@ is purely a registry of starter `flake.nix` files.
 - `mcp-custom/` — all skills + extended MCP server set.
 - `plugins-custom/` — all skills + curated Claude Code plugin marketplaces.
 - `library/` — skills only, no CLIs, demonstrates BYO packages.
+- `dev-env/` — CLIs + opt-in per-contributor dev tooling (Node.js / npm /
+  corepack, Playwright with nixpkgs-built browsers) via `lib.devEnv.mk`.
 
 ## When editing a template
 
@@ -66,6 +68,14 @@ is purely a registry of starter `flake.nix` files.
 - `papanix-ai.lib.mkEphemeralShellHook` — composer mentioned in
   `library/flake.nix` for combining multiple ephemeral hooks (skills,
   mcp, claudeSettings, custom) under one EXIT trap.
+- `papanix-ai.lib.devEnv.mk { pkgs; nodejs? ; playwright? ; extraPackages? }` —
+  per-contributor dev-environment helper. Returns
+  `{ packages; shellHook; }`. `nodejs` accepts `true` or
+  `{ version?; withCorepack?; }`; `playwright` accepts `true` or
+  `{ withBrowsers?; }` and emits `PLAYWRIGHT_BROWSERS_PATH` +
+  `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` so the npm package
+  reuses the Nix-built browser bundle. NOT an ephemeral hook; splice
+  `packages` into `mkShell.packages` and `shellHook` into your shell.
 
 ## Formatting
 

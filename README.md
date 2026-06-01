@@ -23,6 +23,7 @@ repo via `nix flake init -t`.
 | `mcp-custom`     | yes          | all                  | default + your | none                  | Extend `lib.mcp.defaultServers` with extra servers.    |
 | `plugins-custom` | yes          | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
 | `library`        | no           | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
+| `dev-env`        | yes          | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
 
 ## Usage
 
@@ -36,6 +37,7 @@ nix flake init -t github:fmgordillo-dyna/papanix-ai-template#skills-only
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#mcp-custom
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#plugins-custom
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#library
+nix flake init -t github:fmgordillo-dyna/papanix-ai-template#dev-env
 
 # Enter the dev shell:
 nix develop
@@ -86,6 +88,31 @@ your own marketplace alongside the defaults. Pass `settings = { … }` to
 inject custom Claude Code settings (e.g. `permissions`) alongside the
 plugin config.
 
+## Per-contributor dev environment (Node.js, Playwright, …)
+
+Opt in via:
+
+```nix
+devEnv = papanix-ai.lib.devEnv.mk {
+  inherit pkgs;
+  nodejs     = { version = "nodejs_22"; withCorepack = true; };
+  playwright = true;                # browsers + env vars wired
+  # extraPackages = [ pkgs.nodePackages.typescript ];
+};
+
+devShells.default = pkgs.mkShellNoCC {
+  packages  = [ papanix-ai.packages.${system}.default ] ++ devEnv.packages;
+  shellHook = devEnv.shellHook;       # Playwright env vars
+};
+```
+
+`nodejs` ships npm bundled; `withCorepack = true` adds pnpm / yarn
+shims. `playwright = true` (or `{ withBrowsers = true; }`) exports
+`PLAYWRIGHT_BROWSERS_PATH` so the npm `playwright` package reuses the
+Nix-built browser bundle instead of downloading at runtime. Not an
+ephemeral feature module — nothing written to or wiped from your
+project tree. See the `dev-env` template.
+
 ## Caveats
 
 - `.claude/`, `.opencode/`, `.mcp.json`, and `.claude/settings.json` are
@@ -105,5 +132,6 @@ plugin config.
 ├── mcp-custom/      # all skills + extra MCP servers
 ├── plugins-custom/  # all skills + curated Claude Code plugins
 ├── library/         # library-only, no CLIs
+├── dev-env/         # CLIs + opt-in per-contributor dev tooling
 └── flake.nix        # template registry
 ```

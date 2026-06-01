@@ -39,14 +39,28 @@
         # installs the listed plugins on first project trust.
         # Defaults register papa-ai-knowledgebase + rnd-ai-knowledgebase.
         pluginMarketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces;
+        # NOTE: Per-contributor dev tooling (Node.js / npm / Playwright …)
+        # via `lib.devEnv.mk`. Returns `{ packages; shellHook; }` — splice
+        # `devEnv.packages` into the shell's `packages` list and
+        # `${devEnv.shellHook}` into the shellHook string. See the
+        # `dev-env` template for a dedicated example.
+        # devEnv = papanix-ai.lib.devEnv.mk {
+        #   inherit pkgs;
+        #   nodejs     = { version = "nodejs_22"; withCorepack = true; };
+        #   playwright = true;
+        #   # extraPackages = with pkgs.nodePackages; [ typescript prettier ];
+        # };
       in {
         # Here lives `dtctl` and frieds to use individually
         packages = papanix-ai.packages.${system};
 
         # Here we make `nix develop` magic happen:
         devShells.default = pkgs.mkShellNoCC {
-          # We make `dtctl` and other packages available at PATH level
-          packages = [papanix-ai.packages.${system}.default];
+          # We make `dtctl` and other packages available at PATH level.
+          packages =
+            [papanix-ai.packages.${system}.default]
+            # ++ devEnv.packages
+            ;
           # Run the SKILL + MCP + Claude plugins installers
           shellHook = ''
             ${papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;}}
@@ -70,6 +84,7 @@
               #   };
               # };
             }}
+            # ''${devEnv.shellHook}
           '';
         };
       }

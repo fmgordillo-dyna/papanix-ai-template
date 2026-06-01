@@ -58,6 +58,14 @@
         '';
         path = ./library;
       };
+      dev-env = {
+        description = ''
+          CLIs on PATH + opt-in per-contributor dev tooling via
+          lib.devEnv.mk: Node.js / npm / corepack and Playwright with
+          nixpkgs-built browsers. Bring your own MCP / skills / plugins.
+        '';
+        path = ./dev-env;
+      };
     };
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
   };
