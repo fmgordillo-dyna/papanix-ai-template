@@ -14,7 +14,7 @@
 # Both `.claude/` (skills + settings.json) is wiped on shell exit.
 #
 # List available plugins per marketplace:
-#   nix eval github:fmgordillo-dyna/papanix-ai#lib.plugins.defaultMarketplaces \
+#   nix eval github:fmgordillo-dyna/papanix-ai#lib.claudeSettings.defaultMarketplaces \
 #     --apply 'builtins.attrNames' --json
 {
   description = "papanix-ai: devShell with skills + curated Claude Code plugins";
@@ -46,7 +46,7 @@
           packages = [papanix-ai.packages.${system}.default];
           shellHook = ''
             ${papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;}}
-            ${papanix-ai.lib.plugins.mkShellHook {
+            ${papanix-ai.lib.claudeSettings.mkShellHook {
               inherit pkgs;
 
               # NOTE: Pick individual plugins as "<mpKey>/<pluginName>".
@@ -67,11 +67,20 @@
               # `path` is a vendored flake input — required for hermetic
               # plugin enumeration. Omit `path` for register-only (Claude
               # Code shows the marketplace but no auto-enable possible).
-              # marketplaces = papanix-ai.lib.plugins.defaultMarketplaces // {
+              # marketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces // {
               #   my-mp = {
               #     name   = "my-mp";
               #     source = { source = "github"; repo = "my-org/my-marketplace"; };
               #     path   = inputs.my-mp;
+              #   };
+              # };
+
+              # NOTE: Inject your own Claude Code settings (permissions, etc.)
+              # alongside the plugin config — omit when not needed.
+              # settings = {
+              #   permissions = {
+              #     allow = [ "Bash(git:*)" "Read(**)" ];
+              #     deny  = [];
               #   };
               # };
             }}

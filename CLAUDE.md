@@ -50,20 +50,22 @@ is purely a registry of starter `flake.nix` files.
   (Dynatrace MCP). Needs `DT_API_TOKEN` + `DT_ENVIRONMENT`.
 - `papanix-ai.lib.mcp.mkShellHook { pkgs; servers; }` — writes
   `.mcp.json`, wipes on exit.
-- `papanix-ai.lib.plugins.defaultMarketplaces` — default Claude Code
-  plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
+- `papanix-ai.lib.claudeSettings.defaultMarketplaces` — default Claude
+  Code plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
   Each entry is `{ name; source; path?; }`; `path` is a vendored flake
   input used for hermetic plugin enumeration via
   `.claude-plugin/marketplace.json`.
-- `papanix-ai.lib.plugins.mkShellHook { pkgs; marketplaces?; enable?; enableAll?; }` —
+- `papanix-ai.lib.claudeSettings.mkShellHook { pkgs; marketplaces?; enable?; enableAll?; settings?; }` —
   writes project-scope `.claude/settings.json` with
-  `extraKnownMarketplaces` + `enabledPlugins`, wipes on exit. `enable`
-  takes `"<mpKey>/<pluginName>"` strings; `enableAll = true` enables
-  every plugin in every marketplace; `enableAll = ["rnd"]` bulk-enables
-  one marketplace.
+  `extraKnownMarketplaces` + `enabledPlugins` (plugin concern) and
+  optionally merges user-defined fields via `settings` (e.g.
+  `permissions`), wipes on exit. `enable` takes `"<mpKey>/<pluginName>"`
+  strings; `enableAll = true` enables every plugin in every marketplace;
+  `enableAll = ["rnd"]` bulk-enables one marketplace. Omit `settings`
+  entirely when no custom config is needed.
 - `papanix-ai.lib.mkEphemeralShellHook` — composer mentioned in
   `library/flake.nix` for combining multiple ephemeral hooks (skills,
-  mcp, plugins, custom) under one EXIT trap.
+  mcp, claudeSettings, custom) under one EXIT trap.
 
 ## Formatting
 

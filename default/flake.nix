@@ -38,7 +38,7 @@
         # on shell entry, wiped on exit. Claude Code clones each marketplace and
         # installs the listed plugins on first project trust.
         # Defaults register papa-ai-knowledgebase + rnd-ai-knowledgebase.
-        pluginMarketplaces = papanix-ai.lib.plugins.defaultMarketplaces;
+        pluginMarketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces;
       in {
         # Here lives `dtctl` and frieds to use individually
         packages = papanix-ai.packages.${system};
@@ -54,13 +54,21 @@
               inherit pkgs;
               servers = mcpServers;
             }}
-            ${papanix-ai.lib.plugins.mkShellHook {
+            ${papanix-ai.lib.claudeSettings.mkShellHook {
               inherit pkgs;
               marketplaces = pluginMarketplaces;
               # NOTE: Pick individual plugins ("<mpKey>/<pluginName>"):
               # enable = ["papa/papa-jira" "rnd/dt-github"];
               # Or bulk-enable everything from the listed marketplaces:
               enableAll = true;
+              # NOTE: Inject your own Claude Code settings (permissions, etc.)
+              # alongside the plugin config — omit when not needed:
+              # settings = {
+              #   permissions = {
+              #     allow = [ "Bash(git:*)" "Read(**)" ];
+              #     deny  = [];
+              #   };
+              # };
             }}
           '';
         };

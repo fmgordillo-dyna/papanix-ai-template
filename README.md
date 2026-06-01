@@ -66,7 +66,7 @@ generated on shell entry and wiped on exit.
 
 ## Claude Code plugins
 
-`lib.plugins.defaultMarketplaces` pre-registers the
+`lib.claudeSettings.defaultMarketplaces` pre-registers the
 `papa-ai-knowledgebase` and `rnd-ai-knowledgebase` plugin marketplaces.
 On shell entry the template writes `.claude/settings.json` with
 `extraKnownMarketplaces` + `enabledPlugins`; Claude Code clones each
@@ -76,13 +76,15 @@ the vendored marketplace.json), so the enabled set matches your
 `flake.lock`. List the plugin set with:
 
 ```sh
-nix eval github:fmgordillo-dyna/papanix-ai#lib.plugins.defaultMarketplaces \
+nix eval github:fmgordillo-dyna/papanix-ai#lib.claudeSettings.defaultMarketplaces \
   --apply 'm: builtins.attrNames m' --json
 ```
 
-Pick a subset via `lib.plugins.mkShellHook { enable = ["papa/papa-jira" "rnd/dt-github"]; }`,
+Pick a subset via `lib.claudeSettings.mkShellHook { enable = ["papa/papa-jira" "rnd/dt-github"]; }`,
 bulk-enable with `enableAll = true` (or `enableAll = ["rnd"]`), or add
-your own marketplace alongside the defaults.
+your own marketplace alongside the defaults. Pass `settings = { … }` to
+inject custom Claude Code settings (e.g. `permissions`) alongside the
+plugin config.
 
 ## Caveats
 
