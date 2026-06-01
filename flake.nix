@@ -17,10 +17,38 @@
     templates = {
       default = {
         description = ''
-          Default behavior, installs packages and SKILL
-          Perfect to bootstrap a PAPA project with AI tools
+          Batteries included: CLIs on PATH + all skills + Dynatrace MCP.
+          Perfect to bootstrap a PAPA project with AI tools.
         '';
         path = ./default;
+      };
+      minimal = {
+        description = ''
+          CLIs only (acli-pii, aimgr, dtctl, junoctl) on PATH.
+          No skills, no MCP. Nothing wiped on shell exit.
+        '';
+        path = ./minimal;
+      };
+      skills-only = {
+        description = ''
+          Curated subset of AI skills installed into .claude/ and .opencode/.
+          No MCP. Good starting point for tailoring the skill catalog.
+        '';
+        path = ./skills-only;
+      };
+      mcp-custom = {
+        description = ''
+          All skills + MCP with an extra server added on top of the
+          default Dynatrace MCP. Shows how to extend lib.mcp.defaultServers.
+        '';
+        path = ./mcp-custom;
+      };
+      library = {
+        description = ''
+          Consume papanix-ai purely as a library (skill catalog).
+          No CLIs on PATH, no MCP. Bring your own packages.
+        '';
+        path = ./library;
       };
     };
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
