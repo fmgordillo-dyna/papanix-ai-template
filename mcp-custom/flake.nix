@@ -24,7 +24,7 @@
       system: let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        bundle = papanix-ai.lib.mkBundle {
+        bundle = papanix-ai.lib.skills.mkBundle {
           inherit pkgs;
           enableAll = true;
         };
@@ -53,7 +53,7 @@
         devShells.default = pkgs.mkShellNoCC {
           packages = [papanix-ai.packages.${system}.default];
           shellHook = ''
-            ${papanix-ai.lib.mkShellHook {inherit pkgs bundle;}}
+            ${papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;}}
             ${papanix-ai.lib.mcp.mkShellHook {
               inherit pkgs;
               servers = mcpServers;

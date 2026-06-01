@@ -21,7 +21,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
         # We create the `bundle` to ingest it into `papanix-ai` SKILL generation
-        bundle = papanix-ai.lib.mkBundle {
+        bundle = papanix-ai.lib.skills.mkBundle {
           inherit pkgs;
           # NOTE: You can enable all skills
           # enableAll = true;
@@ -49,7 +49,7 @@
           packages = [papanix-ai.packages.${system}.default];
           # Run the SKILL + MCP + Claude plugins installers
           shellHook = ''
-            ${papanix-ai.lib.mkShellHook {inherit pkgs bundle;}}
+            ${papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;}}
             ${papanix-ai.lib.mcp.mkShellHook {
               inherit pkgs;
               servers = mcpServers;

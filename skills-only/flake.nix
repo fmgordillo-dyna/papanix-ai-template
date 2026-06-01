@@ -6,7 +6,7 @@
 # papanix-ai/docs/how-skill-install-works.md).
 #
 # List available skill IDs with:
-#   nix eval github:fmgordillo-dyna/papanix-ai#lib.catalog \
+#   nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog \
 #     --apply builtins.attrNames --json
 {
   description = "papanix-ai: devShell with a curated skill subset, no MCP";
@@ -28,7 +28,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
         # NOTE: Pick the skills you want here. IDs match the catalog.
-        bundle = papanix-ai.lib.mkBundle {
+        bundle = papanix-ai.lib.skills.mkBundle {
           inherit pkgs;
           enable = [
             "dt-jira"
@@ -45,7 +45,7 @@
         devShells.default = pkgs.mkShellNoCC {
           packages = [papanix-ai.packages.${system}.default];
           # Only the skills hook — no MCP setup.
-          shellHook = papanix-ai.lib.mkShellHook {inherit pkgs bundle;};
+          shellHook = papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;};
         };
       }
     );

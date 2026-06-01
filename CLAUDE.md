@@ -39,11 +39,11 @@ is purely a registry of starter `flake.nix` files.
 
 - `papanix-ai.packages.${system}.default` — bundle of PAPA CLIs
   (`acli-pii`, `aimgr`, `dtctl`, `junoctl`).
-- `papanix-ai.lib.mkBundle { pkgs; enable | enableAll; skills? }` —
+- `papanix-ai.lib.skills.mkBundle { pkgs; enable | enableAll; skills? }` —
   builds the skill bundle. See
   `vendor/agent-skills-nix/lib/default.nix` in the upstream repo for
   the skill schema.
-- `papanix-ai.lib.mkShellHook { pkgs; bundle; }` — installs skills
+- `papanix-ai.lib.skills.mkShellHook { pkgs; bundle; }` — installs skills
   into `.claude/` and `.opencode/`, registers an EXIT trap that wipes
   them.
 - `papanix-ai.lib.mcp.defaultServers` — default MCP server set
@@ -62,8 +62,8 @@ is purely a registry of starter `flake.nix` files.
   every plugin in every marketplace; `enableAll = ["rnd"]` bulk-enables
   one marketplace.
 - `papanix-ai.lib.mkEphemeralShellHook` — composer mentioned in
-  `library/flake.nix` for combining multiple ephemeral hooks under one
-  EXIT trap.
+  `library/flake.nix` for combining multiple ephemeral hooks (skills,
+  mcp, plugins, custom) under one EXIT trap.
 
 ## Formatting
 

@@ -51,11 +51,11 @@ nix develop
 Listed catalog IDs available with:
 
 ```sh
-nix eval github:fmgordillo-dyna/papanix-ai#lib.catalog \
+nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog \
   --apply builtins.attrNames --json
 ```
 
-Pick them via `lib.mkBundle { enable = [ ... ]; }` or grab everything
+Pick them via `lib.skills.mkBundle { enable = [ ... ]; }` or grab everything
 with `enableAll = true;`.
 
 ## MCP

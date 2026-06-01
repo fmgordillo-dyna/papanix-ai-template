@@ -6,9 +6,9 @@
 #   - You want to compose papanix-ai skills with your own packages.
 #   - You're building your own derivation/devShell on top.
 #
-# Demonstrates the `lib.mkEphemeralShellHook` composer for combining
-# multiple features (skills, custom hooks, etc.) into one shellHook
-# with a shared EXIT trap.
+# Demonstrates the `lib.skills.mkShellHook` + `lib.mkEphemeralShellHook`
+# composer for combining multiple features (skills, custom hooks, etc.)
+# into one shellHook with a shared EXIT trap.
 {
   description = "papanix-ai: library-only consumer (skills, no CLIs, no MCP)";
 
@@ -28,7 +28,7 @@
       system: let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        bundle = papanix-ai.lib.mkBundle {
+        bundle = papanix-ai.lib.skills.mkBundle {
           inherit pkgs;
           enable = ["dt-github" "dt-jira"];
 
@@ -49,7 +49,7 @@
             ripgrep
           ];
 
-          shellHook = papanix-ai.lib.mkShellHook {inherit pkgs bundle;};
+          shellHook = papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;};
         };
       }
     );
