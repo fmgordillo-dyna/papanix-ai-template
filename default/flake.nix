@@ -28,6 +28,11 @@
           # Or enable certain skills
           # enable = ["create-epic" "dt-github"];
         };
+
+        # NOTE: MCP servers wired into .mcp.json on shell entry, wiped on exit.
+        # Override `servers` to add/replace entries; defaults ship Dynatrace MCP
+        # which needs DT_API_TOKEN + DT_ENVIRONMENT in your env.
+        mcpServers = papanix-ai.lib.mcp.defaultServers;
       in {
         # Here lives `dtctl` and frieds to use individually
         packages = papanix-ai.packages.${system};
@@ -36,10 +41,14 @@
         devShells.default = pkgs.mkShellNoCC {
           # We make `dtctl` and other packages available at PATH level
           packages = [papanix-ai.packages.${system}.default];
-          # Run the SKILL installer
-          shellHook = papanix-ai.lib.mkShellHook {
-            inherit pkgs bundle;
-          };
+          # Run the SKILL + MCP installer
+          shellHook = ''
+            ${papanix-ai.lib.mkShellHook {inherit pkgs bundle;}}
+            ${papanix-ai.lib.mcp.mkShellHook {
+              inherit pkgs;
+              servers = mcpServers;
+            }}
+          '';
         };
       }
     );
