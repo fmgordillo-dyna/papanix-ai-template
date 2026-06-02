@@ -25,8 +25,23 @@
           inherit pkgs;
           # NOTE: You can enable all skills
           # enableAll = true;
-          # Or enable certain skills
+          # NOTE: Or enable certain skills
           # enable = ["create-epic" "dt-github"];
+
+          # NOTE: You can add all your skills
+          # skills = inputs.papanix-ai.lib.skills.discoverCatalog {
+          #   inherit pkgs;
+          #   path = ./skills; # your local skills directory
+          # };
+          # NOTE: OR you can add specific skills from your directory
+          # skills = inputs.papanix-ai.lib.skills.selectSkills {
+          #   inherit pkgs;
+          #   catalog = inputs.papanix-ai.lib.skills.discoverCatalog {
+          #     inherit pkgs;
+          #     path = ./skills;
+          #   };
+          #   enable = ["my-org/my-skill"]; # which local skills to enable
+          # };
         };
 
         # NOTE: MCP servers wired into .mcp.json and opencode.jsonc on shell
