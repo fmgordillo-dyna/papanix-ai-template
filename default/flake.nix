@@ -28,20 +28,13 @@
           # NOTE: Or enable certain skills
           # enable = ["create-epic" "dt-github"];
 
-          # NOTE: You can add all your skills
-          # skills = inputs.papanix-ai.lib.skills.discoverCatalog {
-          #   inherit pkgs;
-          #   path = ./skills; # your local skills directory
+          # NOTE: To include skills from a local directory, add an extraSources
+          # entry and reference its key in `enable` or `enableAll`:
+          # extraSources = {
+          #   local = { path = ./skills; subdir = "."; };
           # };
-          # NOTE: OR you can add specific skills from your directory
-          # skills = inputs.papanix-ai.lib.skills.selectSkills {
-          #   inherit pkgs;
-          #   catalog = inputs.papanix-ai.lib.skills.discoverCatalog {
-          #     inherit pkgs;
-          #     path = ./skills;
-          #   };
-          #   enable = ["my-org/my-skill"]; # which local skills to enable
-          # };
+          # enableAll = ["local"]; # enable all skills from that source
+          # enable = ["local/my-skill"]; # or enable specific ones
         };
 
         # NOTE: MCP servers wired into .mcp.json and opencode.jsonc on shell

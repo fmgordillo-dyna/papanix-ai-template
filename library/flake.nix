@@ -32,13 +32,12 @@
           inherit pkgs;
           enable = ["dt-github" "dt-jira"];
 
-          # NOTE: You can also override or add ad-hoc skills inline.
-          # See vendor/agent-skills-nix/lib/default.nix for the schema.
-          # skills = {
-          #   "my-skill" = {
-          #     path = ./skills/my-skill;  # local SKILL.md directory
-          #   };
+          # NOTE: To include skills from a local directory:
+          # extraSources = {
+          #   local = { path = ./skills; subdir = "."; };
           # };
+          # enableAll = ["local"]; # enable all from that source
+          # enable = ["local/my-skill"]; # or specific ones
         };
       in {
         devShells.default = pkgs.mkShellNoCC {
