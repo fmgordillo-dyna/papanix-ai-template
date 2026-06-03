@@ -15,15 +15,16 @@ repo via `nix flake init -t`.
 
 ## Templates
 
-| Template         | CLIs on PATH | Skills installed     | MCP wired      | Claude plugins        | Notes                                                  |
-| ---------------- | ------------ | -------------------- | -------------- | --------------------- | ------------------------------------------------------ |
-| `default`        | yes          | configurable         | Dynatrace MCP  | all (papa + rnd)      | Batteries-included starter.                            |
-| `minimal`        | yes          | none                 | none           | none                  | CLIs only. Nothing ephemeral, nothing wiped on exit.   |
-| `skills-only`    | yes          | curated subset       | none           | none                  | Tailor the skill catalog without MCP or plugins.       |
-| `mcp-custom`     | yes          | all                  | default + your | none                  | Extend `lib.mcp.defaultServers` with extra servers.    |
-| `plugins-custom` | yes          | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
-| `library`        | no           | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
-| `dev-env`        | yes          | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
+| Template         | Scope        | CLIs on PATH | Skills installed     | MCP wired      | Claude plugins        | Notes                                                  |
+| ---------------- | ------------ | ------------ | -------------------- | -------------- | --------------------- | ------------------------------------------------------ |
+| `default`        | project      | yes          | configurable         | Dynatrace MCP  | all (papa + rnd)      | Batteries-included starter.                            |
+| `minimal`        | project      | yes          | none                 | none           | none                  | CLIs only. Nothing ephemeral, nothing wiped on exit.   |
+| `skills-only`    | project      | yes          | curated subset       | none           | none                  | Tailor the skill catalog without MCP or plugins.       |
+| `mcp-custom`     | project      | yes          | all                  | default + your | none                  | Extend `lib.mcp.defaultServers` with extra servers.    |
+| `plugins-custom` | project      | yes          | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
+| `library`        | project      | no           | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
+| `dev-env`        | project      | yes          | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
+| `home-manager`   | **user**     | yes (global) | configurable         | configurable   | configurable          | Install globally across every project via Home-Manager. |
 
 ## Usage
 
@@ -38,9 +39,13 @@ nix flake init -t github:fmgordillo-dyna/papanix-ai-template#mcp-custom
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#plugins-custom
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#library
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#dev-env
+nix flake init -t github:fmgordillo-dyna/papanix-ai-template#home-manager
 
-# Enter the dev shell:
+# Enter the dev shell (project-scope templates):
 nix develop
+
+# Apply user-scope template (Home-Manager):
+home-manager switch --flake .#me --impure
 ```
 
 ## CLIs (when included)
@@ -122,16 +127,32 @@ project tree. See the `dev-env` template.
 - The `minimal` template does not run any shell hook and leaves your
   workspace untouched.
 
+## Home-Manager (user-scope)
+
+The `home-manager` template is the odd one out — it installs papanix-ai
+into `$HOME` instead of `$PWD`, so the same skills/MCP/plugins are
+available across every repo you open. Apply with
+`home-manager switch --flake .#me --impure` (impure required while
+`acli-pii` is in the selection). Project devShells from the other
+templates still work and layer on top; project scope wins on conflicts.
+
+See [`docs/home-manager.md` in the main flake][hm-docs] for the
+conflict matrix, the MCP `activation` vs `snippet` strategies, and
+caveats around `~/.claude.json` mutability.
+
+[hm-docs]: https://github.com/fmgordillo-dyna/papanix-ai/blob/main/docs/home-manager.md
+
 ## Layout
 
 ```
 .
-├── default/         # batteries-included
-├── minimal/         # CLIs only
-├── skills-only/     # curated skills, no MCP, no plugins
-├── mcp-custom/      # all skills + extra MCP servers
-├── plugins-custom/  # all skills + curated Claude Code plugins
-├── library/         # library-only, no CLIs
-├── dev-env/         # CLIs + opt-in per-contributor dev tooling
+├── default/         # project-scope, batteries-included
+├── minimal/         # project-scope, CLIs only
+├── skills-only/     # project-scope, curated skills, no MCP, no plugins
+├── mcp-custom/      # project-scope, all skills + extra MCP servers
+├── plugins-custom/  # project-scope, all skills + curated Claude Code plugins
+├── library/         # project-scope, library-only, no CLIs
+├── dev-env/         # project-scope, CLIs + opt-in per-contributor dev tooling
+├── home-manager/    # USER-scope, global install via Home-Manager
 └── flake.nix        # template registry
 ```

@@ -66,6 +66,15 @@
         '';
         path = ./dev-env;
       };
+      home-manager = {
+        description = ''
+          USER-SCOPE install via Home-Manager: skills, Claude Code
+          settings, MCP servers, and PAPA CLIs land in $HOME and persist
+          across every repo you open. Project devShells still layer
+          on top.
+        '';
+        path = ./home-manager;
+      };
     };
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
   };
