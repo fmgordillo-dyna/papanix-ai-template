@@ -46,12 +46,21 @@
     # pass to it, with each system as an argument
     forAllSystems = nixpkgs.lib.genAttrs systems;
     pkgs = forAllSystems (system: nixpkgs.legacyPackages.${system});
+
+    # Home-Manager is single-user / single-system, so it needs ONE `pkgs`
+    # instance — not the per-system attrset above. Pick the system you run
+    # `home-manager switch` on.
+    # TODO: set this to match your machine.
+    # Linux/WSL : "x86_64-linux" (or "aarch64-linux" on ARM)
+    # macOS     : "aarch64-darwin" (Apple Silicon) or "x86_64-darwin" (Intel)
+    hmSystem = "x86_64-linux";
   in {
-    packages = forAllSystems (system: nixpkgs.legacyPackages.${system});
+    packages = pkgs;
+
     # TODO: rename "me" to your username. The `home.username` /
     # `home.homeDirectory` fields in ./home.nix must match.
-    inherit pkgs;
     homeConfigurations."me" = home-manager.lib.homeManagerConfiguration {
+      pkgs = pkgs.${hmSystem};
       modules = [
         # 1. Pull in the papanix-ai module — this is what exposes
         #    `programs.papanix-ai.*` in ./home.nix.
