@@ -1,17 +1,56 @@
 # papanix-ai-template
 
-Flake templates for bootstrapping projects that consume
-[`papanix-ai`](https://github.com/fmgordillo-dyna/papanix-ai) —
-the Nix-packaged PAPA CLI + AI skill catalog + MCP wiring.
+> **The install path for papanix-ai.** If you want the Dynatrace
+> internal CLI toolchain (`acli-pii`, `bbctl`, `dtctl`, `junoctl`),
+> the AI-skill catalog, MCP servers, and Claude Code plugin
+> marketplaces in your project or in `$HOME`, you are in the right
+> repo. The upstream library lives at
+> [`fmgordillo-dyna/papanix-ai`](https://github.com/fmgordillo-dyna/papanix-ai)
+> — you do not need to clone it.
 
-papanix-ai is a Nix Flake that pins, delivers the Dynatrace internal CLI
-toolchain (`acli-pii`, `aimgr`, `dtctl`, `junoctl`), installs SKILLs
-for Claude and Opencode, wires up MCP (Model Context Protocol) servers,
-and pre-registers Claude Code plugin marketplaces — to any macOS or
-Linux machine, reproducibly, from a single source of truth.
+This repo ships **flake templates** for every supported install shape
+and **guided agent skills** that walk a first-time user through the
+end-to-end setup.
 
-Each template is a self-contained `flake.nix` you can drop into a new
-repo via `nix flake init -t`.
+---
+
+## Quick start (humans)
+
+End-to-end walkthrough: **[docs/getting-started.md](docs/getting-started.md)**.
+
+Short version:
+
+```bash
+# 1. Install Nix          → docs/install-nix.md
+# 2. Set up credentials   → docs/auth-setup.md
+# 3. Adopt a template:
+nix flake init -t github:fmgordillo-dyna/papanix-ai-template
+# 4. Fill the # TODO: markers in the generated flake.nix
+# 5. Enter the shell:
+nix develop --impure
+```
+
+For user-scope (every repo, via Home-Manager) see
+[docs/home-manager.md](docs/home-manager.md) — or the `home-manager`
+template below.
+
+## Quick start (agents)
+
+Three guided skills cover the entire onboarding surface. Drop a SKILL
+symlink in your `.claude/skills/` (or use the user-scope install) and
+invoke them as slash commands inside Claude Code:
+
+| Skill | When to use |
+|---|---|
+| [`/papanix-ai-setup`](skills/papanix-ai-setup/SKILL.md) | First-time onboarding: install Nix on macOS / Linux / WSL, set up SSH + GitHub PAT + SSO, verify all four CLIs build, init a template. |
+| [`/papanix-ai-template-init`](skills/papanix-ai-template-init/SKILL.md) | User has Nix + credentials but wants to adopt (or re-init) a template into a project. Picks the template, walks every `# TODO:` and `# NOTE:`, smoke-tests the resulting devShell. |
+| [`/papanix-ai-home-manager-setup`](skills/papanix-ai-home-manager-setup/SKILL.md) | Install Home-Manager (if missing), init the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `home-manager switch`. Result: skills / MCP / Claude settings / CLIs in `$HOME`, available across every repo. |
+
+The skills are designed for an LLM driving a developer's shell — they
+ask before destructive operations, never overwrite existing configs
+without confirmation, and surface failures verbatim.
+
+---
 
 ## Templates
 
@@ -42,20 +81,25 @@ nix flake init -t github:fmgordillo-dyna/papanix-ai-template#dev-env
 nix flake init -t github:fmgordillo-dyna/papanix-ai-template#home-manager
 
 # Enter the dev shell (project-scope templates):
-nix develop
+nix develop --impure
 
 # Apply user-scope template (Home-Manager):
-home-manager switch --flake .#me --impure
+nix run home-manager/master -- switch --flake .#me --impure
 ```
+
+Every generated `flake.nix` carries `# TODO:` markers (things you must
+fill) and `# NOTE:` markers (safe tweaks). `/papanix-ai-template-init`
+walks you through every one of them; `docs/getting-started.md` lists
+them by hand.
 
 ## CLIs (when included)
 
-`acli-pii`, `aimgr`, `dtctl`, `junoctl` — exposed via
+`acli-pii`, `bbctl`, `dtctl`, `junoctl` — exposed via
 `papanix-ai.packages.${system}.default`.
 
 ## Skills
 
-Listed catalog IDs available with:
+List the catalog:
 
 ```sh
 nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog \
@@ -122,8 +166,7 @@ project tree. See the `dev-env` template.
 
 - `.claude/`, `.opencode/`, `.mcp.json`, and `.claude/settings.json` are
   **wiped on shell exit** in any template that runs `mkShellHook`.
-  Don't keep hand-edited files there. See
-  `papanix-ai/docs/how-skill-install-works.md`.
+  Don't keep hand-edited files there.
 - The `minimal` template does not run any shell hook and leaves your
   workspace untouched.
 
@@ -136,11 +179,17 @@ available across every repo you open. Apply with
 `acli-pii` is in the selection). Project devShells from the other
 templates still work and layer on top; project scope wins on conflicts.
 
-See [`docs/home-manager.md` in the main flake][hm-docs] for the
-conflict matrix, the MCP `activation` vs `snippet` strategies, and
-caveats around `~/.claude.json` mutability.
+See [docs/home-manager.md](docs/home-manager.md) for the conflict
+matrix, the MCP `activation` vs `snippet` strategies, and caveats
+around `~/.claude.json` mutability. Or run
+`/papanix-ai-home-manager-setup` for an interactive walkthrough.
 
-[hm-docs]: https://github.com/fmgordillo-dyna/papanix-ai/blob/main/docs/home-manager.md
+## Docs
+
+- [docs/getting-started.md](docs/getting-started.md) — end-to-end install sequence.
+- [docs/install-nix.md](docs/install-nix.md) — Install Nix (macOS, Linux, WSL).
+- [docs/auth-setup.md](docs/auth-setup.md) — SSH + GitHub token setup.
+- [docs/home-manager.md](docs/home-manager.md) — user-scope install via Home-Manager.
 
 ## Layout
 
@@ -154,5 +203,7 @@ caveats around `~/.claude.json` mutability.
 ├── library/         # project-scope, library-only, no CLIs
 ├── dev-env/         # project-scope, CLIs + opt-in per-contributor dev tooling
 ├── home-manager/    # USER-scope, global install via Home-Manager
+├── docs/            # install-nix, auth-setup, getting-started, home-manager
+├── skills/          # /papanix-ai-setup, /papanix-ai-template-init, /papanix-ai-home-manager-setup
 └── flake.nix        # template registry
 ```

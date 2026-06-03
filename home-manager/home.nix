@@ -1,9 +1,11 @@
 # home.nix — user-scope papanix-ai configuration.
 #
-# TODO: CHANGE THIS BEFORE DOING ANYTHING
+# Fill in the `# TODO:` markers below before running
+# `home-manager switch`. The `# NOTE:` markers are optional tweaks.
 #
-# NOTE: CHANGE ONLY "NOTE" SECTIONS.Everything else is plumbing; tweak
-# at your own risk.
+# For a guided walkthrough, run `/papanix-ai-home-manager-setup`
+# inside Claude Code. For the full option matrix, see
+# `../docs/home-manager.md`.
 {
   pkgs,
   papanix-ai,
