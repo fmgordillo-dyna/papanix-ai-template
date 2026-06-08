@@ -133,9 +133,10 @@ nix eval github:fmgordillo-dyna/papanix-ai#lib.claudeSettings.defaultMarketplace
 
 Pick a subset via `lib.claudeSettings.mkShellHook { enable = ["papa/papa-jira" "rnd/dt-github"]; }`,
 bulk-enable with `enableAll = true` (or `enableAll = ["rnd"]`), or add
-your own marketplace alongside the defaults. Pass `settings = { … }` to
-inject custom Claude Code settings (e.g. `permissions`) alongside the
-plugin config.
+your own marketplace alongside the defaults with an explicit Claude Code
+`source` plus a discovery `path` (for example `source = { source = "github"; repo = "my-org/my-mp"; }; path = inputs.my-mp;`).
+Pass `settings = { … }` to inject custom Claude Code settings (e.g.
+`permissions`) alongside the plugin config.
 
 ## Per-contributor dev environment (Node.js, Playwright, …)
 

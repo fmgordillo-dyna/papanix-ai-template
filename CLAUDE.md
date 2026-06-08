@@ -99,9 +99,11 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   `.mcp.json` and `opencode.jsonc`, wipes on exit.
 - `papanix-ai.lib.claudeSettings.defaultMarketplaces` — default Claude
   Code plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
-  Each entry is `{ name; source; path?; }`; `path` is a vendored flake
-  input used for hermetic plugin enumeration via
-  `.claude-plugin/marketplace.json`.
+  Marketplace shape is `{ name; input?; source?; path?; }`. The built-in
+  defaults in `papanix-ai` are input-backed internally; when a consumer
+  template adds its own marketplace repo, it usually sets explicit
+  `source = { source = "github"; repo = "owner/repo"; };` plus
+  `path = inputs.my-mp` (or a subdirectory under it).
 - `papanix-ai.lib.claudeSettings.mkShellHook { pkgs; marketplaces?; enable?; enableAll?; settings?; }` —
   writes project-scope `.claude/settings.json` with
   `extraKnownMarketplaces` + `enabledPlugins` (plugin concern) and

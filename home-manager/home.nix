@@ -48,6 +48,19 @@
       # ...or curate:
       # enable = [ "papa/papa-jira" "rnd/dt-github" ];
 
+      # NOTE: Register custom plugin marketplaces (merged with defaults).
+      # In downstream flakes, custom marketplaces use explicit Claude
+      # Code `source` metadata plus a discovery `path`. Pass `my-mp` via
+      # `extraSpecialArgs` from flake.nix if you want to reference a
+      # custom flake input here.
+      # marketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces // {
+      #   my-mp = {
+      #     name = "my-mp";
+      #     source = { source = "github"; repo = "my-org/my-mp"; };
+      #     path = my-mp + "/plugins/caveman";
+      #   };
+      # };
+
       # NOTE: Custom Claude Code settings (permissions, hooks, env, …).
       # settings = {
       #   permissions = {

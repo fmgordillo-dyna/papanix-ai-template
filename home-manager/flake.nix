@@ -26,9 +26,15 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     papanix-ai.url = "github:fmgordillo-dyna/papanix-ai";
+
+    # NOTE: Uncomment to add a custom Claude Code marketplace repo.
+    # my-mp = {
+    #   url = "github:my-org/my-mp";
+    #   flake = false;
+    # };
   };
 
-  outputs = {
+  outputs = inputs @ {
     nixpkgs,
     home-manager,
     papanix-ai,
@@ -71,7 +77,9 @@
       ];
 
       # Pass the papanix-ai flake into ./home.nix so we can reference
-      # its defaults (lib.mcp.defaultServers, etc.).
+      # its defaults (lib.mcp.defaultServers, etc.). If you add a custom
+      # marketplace input above, also pass it here, e.g.
+      #   extraSpecialArgs = { inherit papanix-ai; my-mp = inputs.my-mp; };
       extraSpecialArgs = {inherit papanix-ai;};
     };
   };

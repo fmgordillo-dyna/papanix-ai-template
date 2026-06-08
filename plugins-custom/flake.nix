@@ -25,7 +25,7 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = {
+  outputs = inputs @ {
     nixpkgs,
     flake-utils,
     papanix-ai,
@@ -64,14 +64,15 @@
               # enableAll = ["rnd"];       # everything from the rnd marketplace
 
               # NOTE: Extend the default marketplaces with your own.
-              # `path` is a vendored flake input — required for hermetic
-              # plugin enumeration. Omit `path` for register-only (Claude
-              # Code shows the marketplace but no auto-enable possible).
+              # In downstream flakes, custom marketplaces use explicit
+              # Claude Code `source` metadata plus a discovery `path`.
+              # Add `my-mp` as a flake input first; if the marketplace is
+              # below repo root, point `path` at that subdirectory.
               # marketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces // {
               #   my-mp = {
-              #     name   = "my-mp";
-              #     source = { source = "github"; repo = "my-org/my-marketplace"; };
-              #     path   = inputs.my-mp;
+              #     name = "my-mp";
+              #     source = { source = "github"; repo = "my-org/my-mp"; };
+              #     path = inputs.my-mp + "/plugins/caveman";
               #   };
               # };
 
