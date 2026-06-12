@@ -112,6 +112,20 @@ allowedDomains = {
 };
 ```
 
+If they want to expose a custom package attrset inside Claude, tell them
+to flatten it first:
+
+```nix
+myPkgs = {
+  inherit (pkgs) git ripgrep jq;
+};
+
+allowedPackages = builtins.attrValues myPkgs ++ (with pkgs; [ nodejs ]);
+```
+
+Passing the attrset directly (`allowedPackages = [ myPkgs ];`) fails
+with `cannot coerce a set to a string`.
+
 Remind them: `allowedDomains` only applies when `restrictNetwork = true;`.
 
 ### 4b. Skill enablement (default / skills-only / mcp-custom / plugins-custom / library / home-manager)

@@ -80,7 +80,10 @@ Common edits:
   `home-manager`) — the generated config includes a `mkSandbox { ... }`
   block. Tweak `allowedPackages`, `stateDirs`, `stateFiles`, `extraEnv`,
   `restrictNetwork`, and `allowedDomains` there; remove the package only
-  if you explicitly do not want the wrapper.
+  if you explicitly do not want the wrapper. If you are adding your own
+  package attrset, flatten it first with `builtins.attrValues myPkgs`;
+  `allowedPackages = [ myPkgs ];` will fail with `cannot coerce a set to
+  a string`.
 - **Dev environment** (`dev-env`) — toggle `nodejs`, `playwright`, and
   `extraPackages` in the `lib.devEnv.mk` call.
 - **Home-Manager identity** (`home-manager`) — see

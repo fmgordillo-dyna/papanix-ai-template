@@ -102,7 +102,9 @@ PATH. The templates now build that wrapper locally via
 `import (papanix-ai + "/vendor/agent-sandbox-nix") { inherit pkgs; };`
 so you can customize `allowedPackages`, `stateDirs`, `stateFiles`,
 `extraEnv`, `restrictNetwork`, and `allowedDomains` directly in the
-generated file.
+generated file. If you want to expose a custom package attrset inside
+Claude, use `builtins.attrValues myPkgs` rather than passing the attrset
+directly.
 
 ## Skills
 
@@ -180,9 +182,26 @@ Each sandbox-enabled template includes a `sandboxedClaude =
 sandbox.mkSandbox { ... };` block. Common tweaks:
 
 - add tools to `allowedPackages` if Claude needs them on PATH inside the sandbox
+- if you have your own package attrset, flatten it with `builtins.attrValues` before appending it to `allowedPackages`
 - add persistent paths to `stateDirs` / `stateFiles`
 - tighten egress with `restrictNetwork = true;` plus `allowedDomains = { ... };`
 - pass through extra env vars with `extraEnv`
+
+Example:
+
+```nix
+myPkgs = {
+  inherit (pkgs) git ripgrep jq;
+};
+
+allowedPackages = builtins.attrValues myPkgs ++ (with pkgs; [
+  coreutils
+  which
+  nodejs
+]);
+```
+
+Passing an attrset directly (for example `allowedPackages = [ myPkgs ];`) fails with `cannot coerce a set to a string`.
 
 `allowedDomains` is ignored unless `restrictNetwork = true;`.
 

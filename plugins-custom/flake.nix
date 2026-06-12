@@ -44,6 +44,9 @@
           pkg = pkgs.claude-code;
           binName = "claude";
           outName = "claude";
+          # If you have your own package attrset, flatten it first:
+          #   builtins.attrValues myPkgs ++ (with pkgs; [ git ripgrep ])
+          # `allowedPackages = [ myPkgs ];` fails with "cannot coerce a set to a string".
           allowedPackages = with pkgs; [
             coreutils
             which
