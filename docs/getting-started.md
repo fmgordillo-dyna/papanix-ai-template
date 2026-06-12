@@ -35,14 +35,14 @@ Pick one of:
 
 | Template         | When to pick it |
 |------------------|-----------------|
-| `default`        | A team project. Wires CLIs + skills + Dynatrace MCP + Claude plugins into the repo via `nix develop`. Cleaned up on exit. |
-| `minimal`        | Just the CLIs. Nothing ephemeral, nothing wiped. |
-| `skills-only`    | Curated skill subset. No MCP, no plugins. |
-| `mcp-custom`     | All skills + extra MCP servers on top of the default Dynatrace MCP. |
-| `plugins-custom` | All skills + curated Claude Code plugin marketplaces. |
+| `default`        | A team project. Wires CLIs + sandboxed `claude` + skills + the default MCP server set + Claude plugins into the repo via `nix develop`. Cleaned up on exit. |
+| `minimal`        | Just the CLIs + sandboxed `claude`. Nothing ephemeral, nothing wiped. |
+| `skills-only`    | Curated skill subset + sandboxed `claude`. No MCP, no plugins. |
+| `mcp-custom`     | All skills + sandboxed `claude` + extra MCP servers on top of `lib.mcp.defaultServers`. |
+| `plugins-custom` | All skills + sandboxed `claude` + curated Claude Code plugin marketplaces. |
 | `library`        | Library consumption only. Bring your own packages. |
-| `dev-env`        | CLIs + opt-in Node.js / Playwright via `lib.devEnv.mk`. |
-| `home-manager`   | **User-scope** install. Lives in `$HOME` and follows you across every repo. See [home-manager.md](home-manager.md). |
+| `dev-env`        | CLIs + sandboxed `claude` + opt-in Node.js / Playwright via `lib.devEnv.mk`. |
+| `home-manager`   | **User-scope** install. Lives in `$HOME` and follows you across every repo, including sandboxed `claude`. See [home-manager.md](home-manager.md). |
 
 ## 4. Initialize the template
 
@@ -73,8 +73,14 @@ Common edits:
   ```
 - **Plugin marketplaces** (`plugins-custom`, `default`) — either
   `enableAll = true` or curate with `enable = [ "papa/papa-jira" "rnd/dt-github" ]`.
-- **MCP servers** (`mcp-custom`) — extend `lib.mcp.defaultServers`
-  with your own `{ type; command; args; env; }` entries.
+- **MCP servers** (`default`, `mcp-custom`, `home-manager`) — opt into
+  `lib.mcp.defaultServers` explicitly, then extend it with your own
+  `{ type; command; args; env; }` entries if needed.
+- **Sandboxed `claude`** (all project templates except `library`, plus
+  `home-manager`) — the generated config includes a `mkSandbox { ... }`
+  block. Tweak `allowedPackages`, `stateDirs`, `stateFiles`, `extraEnv`,
+  `restrictNetwork`, and `allowedDomains` there; remove the package only
+  if you explicitly do not want the wrapper.
 - **Dev environment** (`dev-env`) — toggle `nodejs`, `playwright`, and
   `extraPackages` in the `lib.devEnv.mk` call.
 - **Home-Manager identity** (`home-manager`) — see
@@ -93,10 +99,11 @@ nix develop --impure
 at eval time). Drop the flag if you removed `acli-pii` from your CLI
 selection.
 
-On entry the chosen template installs skills, drops MCP config files
-(`.mcp.json`, `opencode.jsonc`), and writes a project-scope
-`.claude/settings.json`. All of those are **wiped on exit** — the
-template is the source of truth, not the generated files.
+On entry the chosen project template installs skills, drops MCP config
+files (`.mcp.json`, `opencode.jsonc`), writes a project-scope
+`.claude/settings.json`, and exposes a sandboxed `claude` on PATH. The
+repo-local files are **wiped on exit** — the template is the source of
+truth, not the generated files.
 
 Smoke test:
 
@@ -105,6 +112,7 @@ bbctl --version
 dtctl --version
 acli-pii --version
 junoctl --version
+claude --version
 ```
 
 (Replace with the subset you picked in your CLI selection.)

@@ -1,6 +1,6 @@
 ---
 name: papanix-ai-template-init
-description: Initialize a papanix-ai-template into the user's project and walk them through every `# TODO:` and key `# NOTE:` marker so the generated flake is ready to use. Helps pick the right template (default / minimal / skills-only / mcp-custom / plugins-custom / library / dev-env / home-manager), runs `nix flake init`, then fills CLI selection, skill enablement, MCP servers, plugin marketplaces, custom permissions, and per-contributor dev tooling. Trigger when the user says "init a template", "set up papanix-ai in this project", "fill out the template", "pick a template", "use papanix-ai here", or invokes /papanix-ai-template-init.
+description: Initialize a papanix-ai-template into the user's project and walk them through every `# TODO:` and key `# NOTE:` marker so the generated flake is ready to use. Helps pick the right template (default / minimal / skills-only / mcp-custom / plugins-custom / library / dev-env / home-manager), runs `nix flake init`, then fills CLI selection, sandboxed claude wiring and config, skill enablement, MCP servers, plugin marketplaces, custom permissions, and per-contributor dev tooling. Trigger when the user says "init a template", "set up papanix-ai in this project", "fill out the template", "pick a template", "use papanix-ai here", or invokes /papanix-ai-template-init.
 ---
 
 # papanix-ai-template-init
@@ -37,13 +37,13 @@ Ask the user what they want, then map to a template:
 
 | Want | Template |
 |---|---|
-| Batteries included (CLIs + all skills + Dynatrace MCP + Claude plugins). | `default` |
-| Just the CLIs, nothing else, nothing wiped. | `minimal` |
-| A subset of skills, no MCP, no plugins. | `skills-only` |
-| All skills + extend the default MCP server set with more entries. | `mcp-custom` |
-| All skills + curated Claude Code plugin marketplaces. | `plugins-custom` |
+| Batteries included (CLIs + sandboxed `claude` + all skills + default MCP servers + Claude plugins). | `default` |
+| Just the CLIs + sandboxed `claude`, nothing else, nothing wiped. | `minimal` |
+| A subset of skills + sandboxed `claude`, no MCP, no plugins. | `skills-only` |
+| All skills + sandboxed `claude` + extend the default MCP server set with more entries. | `mcp-custom` |
+| All skills + sandboxed `claude` + curated Claude Code plugin marketplaces. | `plugins-custom` |
 | Use papanix-ai purely as a library (no CLIs on PATH). | `library` |
-| CLIs + per-contributor Node.js / Playwright via `lib.devEnv.mk`. | `dev-env` |
+| CLIs + sandboxed `claude` + per-contributor Node.js / Playwright via `lib.devEnv.mk`. | `dev-env` |
 
 If they describe a mix, prefer `default` and tweak — it's the closest superset.
 
@@ -75,22 +75,44 @@ Walk these as relevant for the chosen template. For each one: ask, then
 
 ### 4a. CLI selection (every template that pulls in `papanix-ai.packages.<system>.default`)
 
-The default exports all four CLIs (`acli-pii bbctl dtctl junoctl`).
+The project templates export all four CLIs (`acli-pii bbctl dtctl junoctl`)
+and also add a locally-built `sandboxedClaude` package so `claude` is
+sandboxed by default.
 
 Ask:
 
-> Want all four CLIs on PATH, or curate?
+> Want all four CLIs plus sandboxed `claude` on PATH, or curate?
 
-If curate: replace
+If curate: replace the package list with an explicit selection, e.g.
 ```nix
-packages = [papanix-ai.packages.${system}.default];
-```
-with
-```nix
-packages = with papanix-ai.packages.${system}; [ bbctl dtctl junoctl ];
+packages = [ papanix-ai.packages.${system}.bbctl papanix-ai.packages.${system}.dtctl papanix-ai.packages.${system}.junoctl sandboxedClaude ];
 ```
 (or whichever subset they pick). Dropping `acli-pii` lets them use
-`nix develop` without `--impure`.
+`nix develop` without `--impure`; dropping `sandboxedClaude` removes
+the wrapper entirely.
+
+### 4a½. Sandboxed `claude` configuration (every project template except `library`)
+
+The templates now include a local `sandboxedClaude = sandbox.mkSandbox { ... };`
+block instead of only consuming the upstream prebuilt wrapper.
+
+Ask:
+
+> Keep the default sandbox config, or customize allowed packages / state dirs / network policy?
+
+Common edits:
+
+```nix
+allowedPackages = with pkgs; [ git ripgrep jq nodejs gh ];
+stateDirs = [ "$HOME/.claude" "$HOME/.npm" "$HOME/.cache/claude" "$HOME/.config/gh" ];
+restrictNetwork = true;
+allowedDomains = {
+  "api.anthropic.com" = true;
+  "github.com" = true;
+};
+```
+
+Remind them: `allowedDomains` only applies when `restrictNetwork = true;`.
 
 ### 4b. Skill enablement (default / skills-only / mcp-custom / plugins-custom / library / home-manager)
 
@@ -125,7 +147,7 @@ enableAll = [ "local" ];
 ### 4c. MCP servers (default / mcp-custom)
 
 The template sets `mcpServers = papanix-ai.lib.mcp.defaultServers;` — that
-ships Dynatrace MCP + Juno MCP.
+opts into the canned Dynatrace + Juno MCP set explicitly.
 
 Ask:
 
@@ -253,6 +275,7 @@ nix develop --impure --command bash -c '
   dtctl --version
   acli-pii --version
   junoctl --version
+  claude --version
 ' 2>&1
 ```
 
@@ -276,7 +299,7 @@ Failure map:
 Concise summary:
 
 - Template name + path.
-- Which CLIs / skills / MCP servers / plugins are wired.
+- Which CLIs / sandboxed claude / skills / MCP servers / plugins are wired.
 - The ephemeral guarantee — `.claude/`, `.mcp.json`, `opencode.jsonc`,
   `.claude/settings.json` are wiped on shell exit, so don't commit them.
 - If they want a `.envrc` for auto-activation:

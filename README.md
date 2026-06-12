@@ -2,9 +2,9 @@
 
 > **The install path for papanix-ai.** If you want the Dynatrace
 > internal CLI toolchain (`acli-pii`, `bbctl`, `dtctl`, `junoctl`),
-> the AI-skill catalog, MCP servers, and Claude Code plugin
-> marketplaces in your project or in `$HOME`, you are in the right
-> repo. The upstream library lives at
+> the sandboxed `claude` wrapper, the AI-skill catalog, MCP servers,
+> and Claude Code plugin marketplaces in your project or in `$HOME`,
+> you are in the right repo. The upstream library lives at
 > [`fmgordillo-dyna/papanix-ai`](https://github.com/fmgordillo-dyna/papanix-ai)
 > — you do not need to clone it.
 
@@ -44,7 +44,7 @@ invoke them as slash commands inside Claude Code:
 |---|---|
 | [`/papanix-ai-setup`](skills/papanix-ai-setup/SKILL.md) | First-time onboarding: install Nix on macOS / Linux / WSL, set up SSH + GitHub PAT + SSO, verify all four CLIs build, init a template. |
 | [`/papanix-ai-template-init`](skills/papanix-ai-template-init/SKILL.md) | User has Nix + credentials but wants to adopt (or re-init) a template into a project. Picks the template, walks every `# TODO:` and `# NOTE:`, smoke-tests the resulting devShell. |
-| [`/papanix-ai-home-manager-setup`](skills/papanix-ai-home-manager-setup/SKILL.md) | Install Home-Manager (if missing), init the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `home-manager switch`. Result: skills / MCP / Claude settings / CLIs in `$HOME`, available across every repo. |
+| [`/papanix-ai-home-manager-setup`](skills/papanix-ai-home-manager-setup/SKILL.md) | Install Home-Manager (if missing), init the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `home-manager switch`. Result: skills / MCP / Claude settings / CLIs / sandboxed `claude` in `$HOME`, available across every repo. |
 
 The skills are designed for an LLM driving a developer's shell — they
 ask before destructive operations, never overwrite existing configs
@@ -54,16 +54,16 @@ without confirmation, and surface failures verbatim.
 
 ## Templates
 
-| Template         | Scope        | CLIs on PATH | Skills installed     | MCP wired      | Claude plugins        | Notes                                                  |
-| ---------------- | ------------ | ------------ | -------------------- | -------------- | --------------------- | ------------------------------------------------------ |
-| `default`        | project      | yes          | configurable         | Dynatrace MCP  | all (papa + rnd)      | Batteries-included starter.                            |
-| `minimal`        | project      | yes          | none                 | none           | none                  | CLIs only. Nothing ephemeral, nothing wiped on exit.   |
-| `skills-only`    | project      | yes          | curated subset       | none           | none                  | Tailor the skill catalog without MCP or plugins.       |
-| `mcp-custom`     | project      | yes          | all                  | default + your | none                  | Extend `lib.mcp.defaultServers` with extra servers.    |
-| `plugins-custom` | project      | yes          | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
-| `library`        | project      | no           | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
-| `dev-env`        | project      | yes          | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
-| `home-manager`   | **user**     | yes (global) | configurable         | configurable   | configurable          | Install globally across every project via Home-Manager. |
+| Template         | Scope        | CLIs + sandboxed `claude` on PATH | Skills installed     | MCP wired      | Claude plugins        | Notes                                                  |
+| ---------------- | ------------ | --------------------------------- | -------------------- | -------------- | --------------------- | ------------------------------------------------------ |
+| `default`        | project      | yes                               | configurable         | default set     | all (papa + rnd)      | Batteries-included starter.                            |
+| `minimal`        | project      | yes                               | none                 | none           | none                  | CLIs + sandboxed `claude` only. Nothing ephemeral.     |
+| `skills-only`    | project      | yes                               | curated subset       | none           | none                  | Tailor the skill catalog without MCP or plugins.       |
+| `mcp-custom`     | project      | yes                               | all                  | default + your | none                  | Extend `lib.mcp.defaultServers` with extra servers.    |
+| `plugins-custom` | project      | yes                               | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
+| `library`        | project      | no                                | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
+| `dev-env`        | project      | yes                               | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
+| `home-manager`   | **user**     | yes (global)                      | configurable         | configurable   | configurable          | Install globally across every project via Home-Manager. |
 
 ## Usage
 
@@ -97,6 +97,13 @@ them by hand.
 `acli-pii`, `bbctl`, `dtctl`, `junoctl` — exposed via
 `papanix-ai.packages.${system}.default`.
 
+Project templates in this repo also add a sandboxed `claude` binary on
+PATH. The templates now build that wrapper locally via
+`import (papanix-ai + "/vendor/agent-sandbox-nix") { inherit pkgs; };`
+so you can customize `allowedPackages`, `stateDirs`, `stateFiles`,
+`extraEnv`, `restrictNetwork`, and `allowedDomains` directly in the
+generated file.
+
 ## Skills
 
 List the catalog:
@@ -111,9 +118,13 @@ with `enableAll = true;`.
 
 ## MCP
 
-`lib.mcp.defaultServers` ships the Dynatrace MCP. It requires
-`DT_API_TOKEN` and `DT_ENVIRONMENT` in your env. `.mcp.json` is
-generated on shell entry and wiped on exit.
+`lib.mcp.defaultServers` is a convenience set containing the Dynatrace
+and Juno MCP servers. Dynatrace requires `DT_API_TOKEN` and
+`DT_ENVIRONMENT`; Juno needs no extra env vars. Project templates opt
+into that set explicitly. Home-Manager defaults to an empty MCP server
+set, so the `home-manager` template assigns `mcp.servers =
+papanix-ai.lib.mcp.defaultServers;` for you. `.mcp.json` is generated
+on shell entry and wiped on exit.
 
 ## Claude Code plugins
 
@@ -163,6 +174,18 @@ Nix-built browser bundle instead of downloading at runtime. Not an
 ephemeral feature module — nothing written to or wiped from your
 project tree. See the `dev-env` template.
 
+## Sandbox configuration
+
+Each sandbox-enabled template includes a `sandboxedClaude =
+sandbox.mkSandbox { ... };` block. Common tweaks:
+
+- add tools to `allowedPackages` if Claude needs them on PATH inside the sandbox
+- add persistent paths to `stateDirs` / `stateFiles`
+- tighten egress with `restrictNetwork = true;` plus `allowedDomains = { ... };`
+- pass through extra env vars with `extraEnv`
+
+`allowedDomains` is ignored unless `restrictNetwork = true;`.
+
 ## Caveats
 
 - `.claude/`, `.opencode/`, `.mcp.json`, and `.claude/settings.json` are
@@ -174,11 +197,15 @@ project tree. See the `dev-env` template.
 ## Home-Manager (user-scope)
 
 The `home-manager` template is the odd one out — it installs papanix-ai
-into `$HOME` instead of `$PWD`, so the same skills/MCP/plugins are
-available across every repo you open. Apply with
+into `$HOME` instead of `$PWD`, so the same skills/MCP/plugins/CLIs and
+sandboxed `claude` are available across every repo you open. Apply with
 `home-manager switch --flake .#me --impure` (impure required while
-`acli-pii` is in the selection). Project devShells from the other
-templates still work and layer on top; project scope wins on conflicts.
+`acli-pii` is in the selection). Because upstream Home-Manager defaults
+are now explicit opt-in, the template sets `mcp.servers` and
+`cliTools.selection` directly, and builds the sandbox wrapper in
+`home.nix` so you can customize it. Project
+devShells from the other templates still work and layer on top; project
+scope wins on conflicts.
 
 See [docs/home-manager.md](docs/home-manager.md) for the conflict
 matrix, the MCP `activation` vs `snippet` strategies, and caveats
@@ -197,7 +224,7 @@ around `~/.claude.json` mutability. Or run
 ```
 .
 ├── default/         # project-scope, batteries-included
-├── minimal/         # project-scope, CLIs only
+├── minimal/         # project-scope, CLIs + sandboxed claude only
 ├── skills-only/     # project-scope, curated skills, no MCP, no plugins
 ├── mcp-custom/      # project-scope, all skills + extra MCP servers
 ├── plugins-custom/  # project-scope, all skills + curated Claude Code plugins

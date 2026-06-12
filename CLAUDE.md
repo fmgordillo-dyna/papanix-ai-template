@@ -22,7 +22,7 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
 ## Layout
 
 - `flake.nix` — registers each template under `templates.<name>`.
-- `default/` — full setup: CLIs + skills + Dynatrace MCP + Claude plugins.
+- `default/` — full setup: CLIs + sandboxed claude + skills + default MCP servers + Claude plugins.
 - `minimal/` — CLIs only, no shell hook, nothing wiped.
 - `skills-only/` — curated skill subset, no MCP, no plugins.
 - `mcp-custom/` — all skills + extended MCP server set.
@@ -92,11 +92,12 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
 - `papanix-ai.lib.skills.mkShellHook { pkgs; bundle; }` — installs skills
   into `.claude/` (default targets; opencode is opt-in), registers an EXIT
   trap that wipes them.
-- `papanix-ai.lib.mcp.defaultServers` — default MCP server set
+- `papanix-ai.lib.mcp.defaultServers` — convenience MCP server set
   (Dynatrace MCP + Juno MCP). Dynatrace MCP needs `DT_API_TOKEN` + `DT_ENVIRONMENT`;
   Juno MCP requires no env vars.
 - `papanix-ai.lib.mcp.mkShellHook { pkgs; servers; }` — writes
-  `.mcp.json` and `opencode.jsonc`, wipes on exit.
+  `.mcp.json` and `opencode.jsonc`, wipes on exit. Pass `servers`
+  explicitly; downstream defaults are intentionally empty.
 - `papanix-ai.lib.claudeSettings.defaultMarketplaces` — default Claude
   Code plugin marketplaces (`papa-ai-knowledgebase` + `rnd-ai-knowledgebase`).
   Marketplace shape is `{ name; input?; source?; path?; }`. The built-in
@@ -124,8 +125,13 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   reuses the Nix-built browser bundle. NOT an ephemeral hook; splice
   `packages` into `mkShell.packages` and `shellHook` into your shell.
 - `papanix-ai.homeManagerModules.default` — exposes
-  `programs.papanix-ai.*` for the `home-manager/` template. See
-  `docs/home-manager.md` for the full option matrix.
+  `programs.papanix-ai.*` for the `home-manager/` template. Home-Manager
+  defaults are explicit opt-in: `mcp.servers = {}` and
+  `cliTools.selection = []`, so the template sets those values directly.
+  The template also demonstrates a custom sandbox wrapper in `home.nix`
+  so consumers can tune `allowedPackages`, `stateDirs`, and related
+  `mkSandbox` arguments. See `docs/home-manager.md` for the full option
+  matrix.
 
 ## Formatting
 

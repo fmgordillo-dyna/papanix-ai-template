@@ -1,6 +1,6 @@
 ---
 name: papanix-ai-home-manager-setup
-description: Install Home-Manager (if missing) and adopt the papanix-ai `home-manager` template so skills / Claude Code settings / MCP servers / PAPA CLIs live in $HOME and follow the user across every repo. Walks through Home-Manager install, `nix flake init`, filling the TODO markers in flake.nix + home.nix, and the first `home-manager switch`. Trigger when the user says "install home-manager", "user-scope install", "global papanix-ai", "across every repo", "home-manager setup", or invokes /papanix-ai-home-manager-setup.
+description: Install Home-Manager (if missing) and adopt the papanix-ai `home-manager` template so skills / Claude Code settings / MCP servers / PAPA CLIs / sandboxed claude live in $HOME and follow the user across every repo. Walks through Home-Manager install, `nix flake init`, filling the TODO markers in flake.nix + home.nix (including sandbox config), and the first `home-manager switch`. Trigger when the user says "install home-manager", "user-scope install", "global papanix-ai", "across every repo", "home-manager setup", or invokes /papanix-ai-home-manager-setup.
 ---
 
 # papanix-ai-home-manager-setup
@@ -30,7 +30,7 @@ Confirm — these are non-negotiable:
    ```
    If either is missing AND the user wants `acli-pii` / `bbctl` / `junoctl` in `cliTools.selection`, send them to `/papanix-ai-setup` first.
 
-3. Ask which CLIs the user wants on PATH globally. Default is all four; dropping `acli-pii` lets them run `home-manager switch` without `--impure`.
+3. Ask which CLIs the user wants on PATH globally, and whether they want the sandboxed `claude` wrapper. The template defaults to all four CLIs plus a customizable sandbox wrapper; dropping `acli-pii` lets them run `home-manager switch` without `--impure`.
 
 ## Step 1 — Install Home-Manager
 
@@ -132,7 +132,9 @@ Read the file and walk these prompts:
        --apply 'm: builtins.attrNames m' --json
      ```
 
-6. **`programs.papanix-ai.mcp.claudeCode.strategy`** — check whether
+6. **`programs.papanix-ai.mcp.servers`** — explain that upstream Home-Manager now defaults to `{}`. The template opts into `papanix-ai.lib.mcp.defaultServers`; ask whether to keep that canned set or extend it with extra servers.
+
+7. **`programs.papanix-ai.mcp.claudeCode.strategy`** — check whether
    `claude` is on PATH:
    ```bash
    command -v claude
@@ -143,9 +145,11 @@ Read the file and walk these prompts:
      `claude mcp import-json ~/.config/papanix-ai/mcp-servers.json` once
      they install claude-code.
 
-7. **`programs.papanix-ai.cliTools.selection`** —
-   - Default (all four) → requires `--impure` for the switch (acli-pii).
+8. **`programs.papanix-ai.cliTools.selection`** —
+   - Template default (all four) → requires `--impure` for the switch (acli-pii).
    - Pure → tell user to set `selection = [ "bbctl" "dtctl" "junoctl" ];`.
+
+9. **custom `sandboxedClaude` block in `home.nix`** — ask whether the user wants to customize `allowedPackages`, `stateDirs`, `extraEnv`, or network policy. The template installs that package into `home.packages` with `lib.hiPrio` so `claude` resolves to the wrapper globally.
 
 Apply the edits via the `Edit` tool. After each edit, show the user the
 new content of the section you touched so they can sanity-check.
@@ -168,15 +172,17 @@ This will:
   server, record in `~/.config/papanix-ai/mcp-managed.json`.
 - For MCP `snippet` → symlink `~/.config/papanix-ai/mcp-servers.json`.
 - Install PAPA CLIs into `~/.nix-profile/bin/`.
+- Install the sandboxed `claude` wrapper from the custom `sandboxedClaude` package in `home.nix`.
 
 Failure map:
 
 - `error: SSO not authorized` / `404` on `acli-pii` or `bbctl`/`junoctl`
   → credentials missing or stale. Send to `/papanix-ai-setup` Step 4–5.
-- `'claude' CLI not found in PATH` → activation skipped. Either install
-  claude-code (`npm i -g @anthropic-ai/claude-code`) and re-run
-  `home-manager switch`, or switch to `snippet` strategy in
-  `home.nix` and re-run.
+- `'claude' CLI not found in PATH` → activation skipped. If the template
+  just installed sandboxing, open a new shell and re-run
+  `home-manager switch`; otherwise install claude-code (or keep the
+  sandboxed wrapper enabled) and re-run, or switch to `snippet`
+  strategy in `home.nix`.
 - `attribute 'me' missing` → name mismatch between `flake.nix`
   `homeConfigurations."<name>"` and the `--flake .#<name>` argument.
 - `Conflict between … and …` → another Home-Manager-managed file
@@ -198,8 +204,8 @@ claude mcp list --scope user 2>/dev/null
 # MCP (snippet)
 ls -la ~/.config/papanix-ai/mcp-servers.json 2>/dev/null
 
-# CLIs
-which bbctl dtctl acli-pii junoctl 2>/dev/null
+# CLIs + sandboxed claude
+which bbctl dtctl acli-pii junoctl claude 2>/dev/null
 ```
 
 Anything missing → cross-reference the relevant section of
@@ -209,7 +215,7 @@ Anything missing → cross-reference the relevant section of
 
 Concise summary:
 
-- What landed (skills count, plugin marketplaces, MCP server names, CLIs).
+- What landed (skills count, plugin marketplaces, MCP server names, CLIs, sandboxed `claude`).
 - Whether the user is on `activation` or `snippet`, and the one-time
   manual step if `snippet`.
 - That project devShells from other templates still layer on top —

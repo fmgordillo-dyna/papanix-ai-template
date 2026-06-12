@@ -1,8 +1,9 @@
 # home-manager — papanix-ai at USER scope.
 #
 # This is a starter Home-Manager configuration that installs the
-# papanix-ai skills, Claude Code settings, MCP servers, and PAPA CLIs
-# globally — into your $HOME, available across every repo you open.
+# papanix-ai skills, Claude Code settings, MCP servers, PAPA CLIs, and
+# sandboxed `claude` wrapper globally — into your $HOME, available
+# across every repo you open.
 #
 # Differences from the project-scope templates (default/, skills-only/,
 # …): those drop files into $PWD/.claude/ etc. and wipe them on
@@ -19,7 +20,7 @@
 #
 # If you're new to Home-Manager: https://nix-community.github.io/home-manager/
 {
-  description = "papanix-ai user-scope (Home-Manager) starter";
+  description = "papanix-ai user-scope (Home-Manager) starter with sandboxed claude";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -60,13 +61,20 @@
     # Linux/WSL : "x86_64-linux" (or "aarch64-linux" on ARM)
     # macOS     : "aarch64-darwin" (Apple Silicon) or "x86_64-darwin" (Intel)
     hmSystem = "x86_64-linux";
+
+    # NOTE: We import nixpkgs with allowUnfree because the customizable
+    # sandbox wrapper in ./home.nix wraps `claude-code` locally.
+    hmPkgs = import nixpkgs {
+      system = hmSystem;
+      config.allowUnfree = true;
+    };
   in {
     packages = pkgs;
 
     # TODO: rename "me" to your username. The `home.username` /
     # `home.homeDirectory` fields in ./home.nix must match.
     homeConfigurations."me" = home-manager.lib.homeManagerConfiguration {
-      pkgs = pkgs.${hmSystem};
+      pkgs = hmPkgs;
       modules = [
         # 1. Pull in the papanix-ai module — this is what exposes
         #    `programs.papanix-ai.*` in ./home.nix.

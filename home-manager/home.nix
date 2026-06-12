@@ -7,10 +7,59 @@
 # inside Claude Code. For the full option matrix, see
 # `../docs/home-manager.md`.
 {
+  lib,
   pkgs,
   papanix-ai,
   ...
-}: {
+}: let
+  # NOTE: Customize the sandboxed `claude` wrapper here. Anything in
+  # `allowedPackages` lands on PATH inside the sandbox. `stateDirs` /
+  # `stateFiles` persist across runs. `extraEnv` passes selected env vars
+  # through. `allowedDomains` only applies when `restrictNetwork = true;`.
+  sandbox = import (papanix-ai + "/vendor/agent-sandbox-nix") {inherit pkgs;};
+  sandboxedClaude = sandbox.mkSandbox {
+    pkg = pkgs.claude-code;
+    binName = "claude";
+    outName = "claude";
+    allowedPackages = with pkgs; [
+      coreutils
+      which
+      git
+      ripgrep
+      fd
+      gnused
+      gnugrep
+      findutils
+      diffutils
+      less
+      gawk
+      jq
+      curl
+      nodejs
+    ];
+    stateDirs = [
+      "$HOME/.claude"
+      "$HOME/.npm"
+      "$HOME/.cache/claude"
+    ];
+    stateFiles = [];
+    extraEnv = {
+      CLAUDE_CODE_OAUTH_TOKEN = "$CLAUDE_CODE_OAUTH_TOKEN";
+      ANTHROPIC_API_KEY = "$ANTHROPIC_API_KEY";
+      GITHUB_TOKEN = "$GITHUB_TOKEN";
+      CLAUDE_CONFIG_DIR = "$HOME/.claude";
+      GIT_AUTHOR_NAME = "claude";
+      GIT_AUTHOR_EMAIL = "claude@localhost";
+      GIT_COMMITTER_NAME = "claude";
+      GIT_COMMITTER_EMAIL = "claude@localhost";
+    };
+    restrictNetwork = false;
+    # allowedDomains = {
+    #   "api.anthropic.com" = true;
+    #   "github.com" = true;
+    # };
+  };
+in {
   # ── Identity ─────────────────────────────────────────────────────────
   # TODO: Change these to match your account. They must match the
   # `homeConfigurations.<name>` key in flake.nix (here: "me").
@@ -22,7 +71,7 @@
   # https://nix-community.github.io/home-manager/release-notes.html
   home.stateVersion = "24.05";
 
-  # ── papanix-ai (global skills / MCP / Claude settings / CLIs) ────────
+  # ── papanix-ai (global skills / MCP / Claude settings / CLIs / claude) ─────
   programs.papanix-ai = {
     enable = true;
 
@@ -57,7 +106,7 @@
       #   my-mp = {
       #     name = "my-mp";
       #     source = { source = "github"; repo = "my-org/my-mp"; };
-      #     path = my-mp + "/plugins/caveman";
+      #     path = my-mp + "/plugins";
       #   };
       # };
 
@@ -72,7 +121,11 @@
 
     # ── MCP (Model Context Protocol) ──────────────────────────────────
     mcp = {
-      # NOTE: Add custom servers on top of the defaults, or replace.
+      # NOTE: Home-Manager defaults to no MCP servers, so opt into the
+      # canned set explicitly here.
+      servers = papanix-ai.lib.mcp.defaultServers;
+
+      # NOTE: To add custom servers on top, replace the line above with:
       # servers = papanix-ai.lib.mcp.defaultServers // {
       #   github = {
       #     type    = "stdio";
@@ -89,10 +142,9 @@
         enable = true;
 
         # NOTE: "activation" (default) requires `claude` on PATH at HM
-        # switch time. Switch to "snippet" if you haven't installed
-        # claude-code yet — that writes
-        # ~/.config/papanix-ai/mcp-servers.json and you run
-        # `claude mcp import-json …` once.
+        # switch time. Switch to "snippet" if `claude` is not available
+        # yet — that writes ~/.config/papanix-ai/mcp-servers.json and you
+        # run `claude mcp import-json …` once.
         # strategy = "snippet";
       };
 
@@ -103,11 +155,9 @@
     # ── PAPA CLIs on PATH (~/.nix-profile/bin/…) ──────────────────────
     cliTools = {
       enable = true;
+      selection = ["acli-pii" "bbctl" "dtctl" "junoctl"];
 
-      # NOTE: Defaults install ALL FOUR. `acli-pii` requires
-      # `home-manager switch --flake … --impure` because it is fetched
-      # from a private Bitbucket repo via SSH at evaluation time. Drop
-      # it from the list for a pure build:
+      # NOTE: Drop `acli-pii` for a pure switch:
       # selection = [ "bbctl" "dtctl" "junoctl" ];
     };
 
@@ -121,6 +171,12 @@
     #   # extraPackages = with pkgs; [ jq gh ];
     # };
   };
+
+  # ── Sandboxed Claude Code wrapper ─────────────────────────────────
+  # NOTE: We add the wrapper directly to `home.packages` so you can
+  # customize `allowedPackages`, `stateDirs`, `extraEnv`, and network
+  # policy above. `hiPrio` keeps this `claude` ahead of any raw one.
+  home.packages = [(lib.hiPrio sandboxedClaude)];
 
   # ── Anything else you want in your $HOME ─────────────────────────────
   # NOTE: This is a regular Home-Manager file — add programs, files,

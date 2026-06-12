@@ -9,8 +9,9 @@ open — including third-party repos you don't want to add a flake to.
 
 The `home-manager` template gives you exactly that. Declare it once and
 Home-Manager installs the same skill catalog, Claude Code settings, MCP
-servers, and PAPA CLIs at user scope. Per-project devShells (from any
-of the other templates) still work — they layer on top.
+servers, PAPA CLIs, and sandboxed `claude` wrapper at user scope.
+Per-project devShells (from any of the other templates) still work —
+they layer on top.
 
 If you've never used Home-Manager, the fastest path is the guided
 walkthrough — let an agent invoke `/papanix-ai-home-manager-setup`, or
@@ -25,8 +26,9 @@ follow this doc.
   rest of this doc assumes the flake-based install.
 - For Claude Code MCP setup with the default `activation` strategy, the
   `claude` CLI must be on `$PATH` when you run `home-manager switch`.
-  If it isn't, the activation step warns and skips — re-run after
-  installing claude-code.
+  The template enables the sandboxed wrapper, but on the very first
+  switch you may still need to re-run once the new profile is active,
+  or switch to `snippet` for a one-time manual import.
 
 ## Install Home-Manager (if you don't have it)
 
@@ -76,7 +78,7 @@ programs.papanix-ai.cliTools.selection = [ "bbctl" "dtctl" "junoctl" ];
 
 ## Filling in the TODOs
 
-Two files, three things to change:
+Two files, a handful of knobs to confirm:
 
 ### `flake.nix`
 
@@ -93,8 +95,10 @@ Two files, three things to change:
 | `home.stateVersion` | Leave as-is on first install; only bump after reading the Home-Manager release notes. |
 | `programs.papanix-ai.skills` | Either `enableAll = true;` or `enable = [ "papa/dt-jira" "rnd/dt-github" ]` with the skill IDs you want. List the catalog: `nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog --apply builtins.attrNames --json`. |
 | `programs.papanix-ai.claudeSettings` | `enableAll = true;` enables every plugin from `papa-ai-knowledgebase` + `rnd-ai-knowledgebase`. Curate with `enable = [ "papa/papa-jira" "rnd/dt-github" ]`. |
-| `programs.papanix-ai.mcp.claudeCode.strategy` | Keep `activation` (default) if the `claude` CLI is on PATH at switch time. Switch to `snippet` otherwise and run `claude mcp import-json ~/.config/papanix-ai/mcp-servers.json` after activation. |
-| `programs.papanix-ai.cliTools.selection` | Defaults to all four. Drop `acli-pii` if you want a pure build (no `--impure`). |
+| `programs.papanix-ai.mcp.servers` | Home-Manager defaults to `{}`. The template opts into `papanix-ai.lib.mcp.defaultServers`; extend that attrset if you want more servers. |
+| `programs.papanix-ai.mcp.claudeCode.strategy` | Keep `activation` (default) if `claude` is already on PATH at switch time. Switch to `snippet` otherwise and run `claude mcp import-json ~/.config/papanix-ai/mcp-servers.json` after activation. |
+| `programs.papanix-ai.cliTools.selection` | The module default is `[]`. The template sets all four explicitly; drop `acli-pii` if you want a pure build (no `--impure`). |
+| custom `sandboxedClaude` block in `home.nix` | Builds the sandboxed `claude` wrapper locally so you can tune `allowedPackages`, `stateDirs`, `extraEnv`, `restrictNetwork`, and `allowedDomains`. |
 
 > **For agents:** the `/papanix-ai-home-manager-setup` skill walks the
 > user through these prompts interactively, and runs the final
@@ -112,6 +116,7 @@ Two files, three things to change:
 | `mcp.claudeCode` (`activation`) | `~/.claude.json` (server entries only, under `--scope user`) | HM activation runs `claude mcp add-json --scope user`; manifest at `~/.config/papanix-ai/mcp-managed.json` tracks the set |
 | `mcp.claudeCode` (`snippet`) | `~/.config/papanix-ai/mcp-servers.json` | declarative symlink; you run `claude mcp import-json …` once |
 | `cliTools.selection` | `home.packages` | regular Nix package install |
+| custom `sandboxedClaude` | `home.packages` (`claude`) | high-priority sandboxed wrapper |
 
 Why two MCP strategies for Claude Code? `~/.claude.json` is **mutable**
 state that the `claude` CLI writes to (project trust, auth tokens,
@@ -135,7 +140,7 @@ conflicts** (matching server names, skill IDs, settings keys).
 | Claude settings | `~/.claude/settings.json` | `$PWD/.claude/settings.json` | project keys win in deep-merge |
 | MCP (Claude Code) | `--scope user` entries | `$PWD/.mcp.json` | project wins on duplicate server name |
 | MCP (opencode) | `~/.config/opencode/opencode.jsonc` | `$PWD/opencode.jsonc` | project wins |
-| CLIs | `home.packages` (global PATH) | devShell `packages` (PATH while in `nix develop`) | devShell entry takes precedence inside the shell |
+| CLIs / sandboxed `claude` | `home.packages` (global PATH) | devShell `packages` (PATH while in `nix develop`) | devShell entry takes precedence inside the shell |
 
 The devShell's EXIT trap wipes only `$PWD/.claude/`, `$PWD/.mcp.json`,
 `$PWD/opencode.jsonc` — never `~/.claude/` or `~/.config/…`. Your
@@ -172,6 +177,9 @@ programs.papanix-ai = {
 };
 ```
 
+If you want no MCP at user scope, leave `mcp.servers = {}` and disable
+both `mcp.claudeCode.enable` and `mcp.opencode.enable`.
+
 ### Plugins + custom permissions, no MCP
 
 ```nix
@@ -201,6 +209,9 @@ programs.papanix-ai = {
 };
 ```
 
+(The template still installs the sandboxed `claude` wrapper via the
+custom `sandboxedClaude` package in `home.nix`.)
+
 After `home-manager switch`, run once:
 
 ```bash
@@ -213,6 +224,15 @@ claude mcp import-json ~/.config/papanix-ai/mcp-servers.json
   is needed while `acli-pii` is in `cliTools.selection`. The flake reads
   your SSH credentials at eval time to fetch the private repo. Drop
   `acli-pii` from the selection for a pure build.
+- **Explicit Home-Manager defaults.** Upstream defaults are intentionally
+  inert: `mcp.servers = {}` and `cliTools.selection = []`. The template
+  opts into `lib.mcp.defaultServers`, all four CLIs, and a custom
+  sandbox wrapper for you; if you hand-roll your own config, remember to
+  set those values explicitly.
+- **First switch with the sandbox wrapper may need a second pass.** If you keep
+  `mcp.claudeCode.strategy = "activation";` and `claude` was not on PATH
+  before the switch, open a new shell after Home-Manager installs the
+  sandboxed wrapper and run `home-manager switch` again.
 - **`~/.claude.json` is owned by the CLI, not HM.** We never symlink it.
   The `activation` strategy mutates only the MCP section via
   `claude mcp add-json`; the rest of the file (project trust, auth) is
