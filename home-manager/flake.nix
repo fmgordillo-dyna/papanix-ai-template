@@ -1,9 +1,9 @@
 # home-manager — papanix-ai at USER scope.
 #
-# This is a starter Home-Manager configuration that installs the
-# papanix-ai skills, Claude Code settings, MCP servers, PAPA CLIs, and
-# sandboxed `claude` wrapper globally — into your $HOME, available
-# across every repo you open.
+# This is a starter Home-Manager configuration that installs skills for
+# non-Claude agents (opencode, codex, …), Claude Code plugin
+# marketplaces, PAPA CLIs, and sandboxed `claude` wrapper globally —
+# into your $HOME, available across every repo you open.
 #
 # Differences from the project-scope templates (default/, skills-only/,
 # …): those drop files into $PWD/.claude/ etc. and wipe them on
@@ -16,7 +16,7 @@
 #
 # `--impure` is required while `acli-pii` is in cliTools.selection
 # (fetched from a private Bitbucket repo over SSH at eval time). Drop
-# it for a pure build — see ./home.nix.
+# `acli-pii` for a pure build — see ./home.nix.
 #
 # If you're new to Home-Manager: https://nix-community.github.io/home-manager/
 {
@@ -28,7 +28,8 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     papanix-ai.url = "github:fmgordillo-dyna/papanix-ai";
 
-    # NOTE: Uncomment to add a custom Claude Code marketplace repo.
+    # NOTE: Uncomment to add a custom plugin marketplace repo and pass it
+    # into home.nix via extraSpecialArgs.
     # my-mp = {
     #   url = "github:my-org/my-mp";
     #   flake = false;
@@ -62,8 +63,9 @@
     # macOS     : "aarch64-darwin" (Apple Silicon) or "x86_64-darwin" (Intel)
     hmSystem = "x86_64-linux";
 
-    # NOTE: We import nixpkgs with allowUnfree because the customizable
-    # sandbox wrapper in ./home.nix wraps `claude-code` locally.
+    # NOTE: We import nixpkgs with allowUnfree because
+    # programs.papanix-ai.sandboxing.enable installs a wrapper around
+    # `claude-code`, which is unfree.
     hmPkgs = import nixpkgs {
       system = hmSystem;
       config.allowUnfree = true;

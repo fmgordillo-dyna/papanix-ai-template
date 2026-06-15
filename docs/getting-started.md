@@ -76,12 +76,15 @@ Common edits:
 - **MCP servers** (`default`, `mcp-custom`, `home-manager`) — opt into
   `lib.mcp.defaultServers` explicitly, then extend it with your own
   `{ type; command; args; env; }` entries if needed.
-- **Sandboxed `claude`** (all project templates except `library`, plus
-  `home-manager`) — the generated config includes a `mkSandbox { ... }`
-  block. Tweak `allowedPackages`, `stateDirs`, `stateFiles`, `extraEnv`,
-  `restrictNetwork`, and `allowedDomains` there; remove the package only
-  if you explicitly do not want the wrapper. If you are adding your own
-  package attrset, flatten it first with `builtins.attrValues myPkgs`;
+- **Sandboxed `claude`** — project templates (everything except
+  `library` and `home-manager`) include a local `mkSandbox { ... }`
+  block; tweak `allowedPackages`, `stateDirs`, `stateFiles`, `extraEnv`,
+  `restrictNetwork`, and `allowedDomains` there. The `home-manager`
+  template instead uses `programs.papanix-ai.sandboxing.*`, with safe
+  defaults already including the PAPA CLIs plus helpers like `git`,
+  `rg`, `fd`, `jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, and
+  `node`. If you are adding your own package attrset to a project
+  template, flatten it first with `builtins.attrValues myPkgs`;
   `allowedPackages = [ myPkgs ];` will fail with `cannot coerce a set to
   a string`.
 - **Dev environment** (`dev-env`) — toggle `nodejs`, `playwright`, and

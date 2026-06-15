@@ -30,7 +30,7 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
 - `library/` — skills only, no CLIs, demonstrates BYO packages.
 - `dev-env/` — CLIs + opt-in per-contributor dev tooling (Node.js / npm /
   corepack, Playwright with nixpkgs-built browsers) via `lib.devEnv.mk`.
-- `home-manager/` — user-scope Home-Manager starter.
+- `home-manager/` — user-scope Home-Manager starter: skills for non-Claude agents + Claude plugin marketplace registration + CLIs + sandboxed claude. MCP lives in the project devShell.
 - `docs/` — consumer install + onboarding docs:
   - `getting-started.md` — end-to-end install sequence (Nix → creds → template → devShell).
   - `install-nix.md` — Nix install for macOS (incl. 26+), Linux, WSL.
@@ -39,7 +39,7 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
 - `skills/` — guided onboarding skills (canonical, do not duplicate their steps in docs):
   - `papanix-ai-setup` — first-time onboarding (Nix install + creds + template init + smoke build). Trigger: "getting started", "first setup", "set up credentials", "onboard", "install papanix-ai".
   - `papanix-ai-template-init` — adopt a template into a project, walk every `# TODO:` / `# NOTE:`, smoke-test the devShell. Trigger: "init a template", "set up papanix-ai in this project", "fill out the template".
-  - `papanix-ai-home-manager-setup` — install Home-Manager, adopt the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `switch`. Trigger: "install home-manager", "user-scope install", "global papanix-ai".
+  - `papanix-ai-home-manager-setup` — install Home-Manager, adopt the `home-manager` template, fill TODOs (skills targets for non-Claude agents, plugin marketplaces, CLIs, sandbox), run the first `switch`. Trigger: "install home-manager", "user-scope install", "global papanix-ai".
 
 ## When editing a template
 
@@ -125,13 +125,13 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   reuses the Nix-built browser bundle. NOT an ephemeral hook; splice
   `packages` into `mkShell.packages` and `shellHook` into your shell.
 - `papanix-ai.homeManagerModules.default` — exposes
-  `programs.papanix-ai.*` for the `home-manager/` template. Home-Manager
-  defaults are explicit opt-in: `mcp.servers = {}` and
-  `cliTools.selection = []`, so the template sets those values directly.
-  The template also demonstrates a custom sandbox wrapper in `home.nix`
-  so consumers can tune `allowedPackages`, `stateDirs`, and related
-  `mkSandbox` arguments. See `docs/home-manager.md` for the full option
-  matrix.
+  `programs.papanix-ai.*` for the `home-manager/` template. Skills
+  default to non-Claude agents (`claude` target disabled by default);
+  `claudeSettings` manages marketplace registration only (plugin
+  enablement via Claude TUI). MCP is not exposed here — manage it in
+  project devShells. `cliTools.selection = []` by default so the
+  template sets it explicitly. See `docs/home-manager.md` for the full
+  option matrix.
 
 ## Formatting
 

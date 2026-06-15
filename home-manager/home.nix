@@ -7,62 +7,10 @@
 # inside Claude Code. For the full option matrix, see
 # `../docs/home-manager.md`.
 {
-  lib,
   pkgs,
   papanix-ai,
   ...
-}: let
-  # NOTE: Customize the sandboxed `claude` wrapper here. Anything in
-  # `allowedPackages` lands on PATH inside the sandbox. `stateDirs` /
-  # `stateFiles` persist across runs. `extraEnv` passes selected env vars
-  # through. `allowedDomains` only applies when `restrictNetwork = true;`.
-  sandbox = import (papanix-ai + "/vendor/agent-sandbox-nix") {inherit pkgs;};
-  sandboxedClaude = sandbox.mkSandbox {
-    pkg = pkgs.claude-code;
-    binName = "claude";
-    outName = "claude";
-    # If you have your own package attrset, flatten it first:
-    #   builtins.attrValues myPkgs ++ (with pkgs; [ git ripgrep ])
-    # `allowedPackages = [ myPkgs ];` fails with "cannot coerce a set to a string".
-    allowedPackages = with pkgs; [
-      coreutils
-      which
-      git
-      ripgrep
-      fd
-      gnused
-      gnugrep
-      findutils
-      diffutils
-      less
-      gawk
-      jq
-      curl
-      nodejs
-    ];
-    stateDirs = [
-      "$HOME/.claude"
-      "$HOME/.npm"
-      "$HOME/.cache/claude"
-    ];
-    stateFiles = [];
-    extraEnv = {
-      CLAUDE_CODE_OAUTH_TOKEN = "$CLAUDE_CODE_OAUTH_TOKEN";
-      ANTHROPIC_API_KEY = "$ANTHROPIC_API_KEY";
-      GITHUB_TOKEN = "$GITHUB_TOKEN";
-      CLAUDE_CONFIG_DIR = "$HOME/.claude";
-      GIT_AUTHOR_NAME = "claude";
-      GIT_AUTHOR_EMAIL = "claude@localhost";
-      GIT_COMMITTER_NAME = "claude";
-      GIT_COMMITTER_EMAIL = "claude@localhost";
-    };
-    restrictNetwork = false;
-    # allowedDomains = {
-    #   "api.anthropic.com" = true;
-    #   "github.com" = true;
-    # };
-  };
-in {
+}: {
   # ── Identity ─────────────────────────────────────────────────────────
   # TODO: Change these to match your account. They must match the
   # `homeConfigurations.<name>` key in flake.nix (here: "me").
@@ -164,6 +112,37 @@ in {
       # selection = [ "bbctl" "dtctl" "junoctl" ];
     };
 
+    # ── Sandboxed Claude Code wrapper ─────────────────────────────────
+    sandboxing = {
+      enable = true;
+
+      # NOTE: Safe defaults are already included inside the wrapper:
+      # git, rg, fd, jq, curl, file, tree, tar, zip, unzip, node, and
+      # the PAPA CLIs. Add only what you need beyond that.
+      # extraAllowedPackages = with pkgs; [ gh kubectl ];
+
+      # NOTE: Persist extra tool state or individual config files.
+      # extraRwDirs = [ "$HOME/.config/gh" "$HOME/.kube" ];
+      # extraRwFiles = [ "$HOME/.gitconfig" ];
+
+      # NOTE: Bind read-only config into the sandbox when needed.
+      # extraRoDirs = [ "$HOME/.config/some-readonly-tree" ];
+      # extraRoFiles = [ "$HOME/.config/readonly.conf" ];
+
+      # NOTE: Pass extra env vars through to the sandboxed process.
+      # extraEnv = {
+      #   GH_TOKEN = "$GH_TOKEN";
+      #   KUBECONFIG = "$HOME/.kube/config";
+      # };
+
+      # NOTE: Keep fully open by default. Tighten only if wanted.
+      # restrictNetwork = true;
+      # allowedDomains = {
+      #   "github.com" = [ "GET" "HEAD" ];
+      #   "api.anthropic.com" = "*";
+      # };
+    };
+
     # ── Per-contributor dev tooling (optional) ────────────────────────
     # NOTE: Uncomment to add Node.js / Playwright / arbitrary packages
     # at user scope. Same shape as lib.devEnv.mk.
@@ -174,12 +153,6 @@ in {
     #   # extraPackages = with pkgs; [ jq gh ];
     # };
   };
-
-  # ── Sandboxed Claude Code wrapper ─────────────────────────────────
-  # NOTE: We add the wrapper directly to `home.packages` so you can
-  # customize `allowedPackages`, `stateDirs`, `extraEnv`, and network
-  # policy above. `hiPrio` keeps this `claude` ahead of any raw one.
-  home.packages = [(lib.hiPrio sandboxedClaude)];
 
   # ── Anything else you want in your $HOME ─────────────────────────────
   # NOTE: This is a regular Home-Manager file — add programs, files,

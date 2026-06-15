@@ -44,7 +44,7 @@ invoke them as slash commands inside Claude Code:
 |---|---|
 | [`/papanix-ai-setup`](skills/papanix-ai-setup/SKILL.md) | First-time onboarding: install Nix on macOS / Linux / WSL, set up SSH + GitHub PAT + SSO, verify all four CLIs build, init a template. |
 | [`/papanix-ai-template-init`](skills/papanix-ai-template-init/SKILL.md) | User has Nix + credentials but wants to adopt (or re-init) a template into a project. Picks the template, walks every `# TODO:` and `# NOTE:`, smoke-tests the resulting devShell. |
-| [`/papanix-ai-home-manager-setup`](skills/papanix-ai-home-manager-setup/SKILL.md) | Install Home-Manager (if missing), init the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `home-manager switch`. Result: skills / MCP / Claude settings / CLIs / sandboxed `claude` in `$HOME`, available across every repo. |
+| [`/papanix-ai-home-manager-setup`](skills/papanix-ai-home-manager-setup/SKILL.md) | Install Home-Manager (if missing), init the `home-manager` template, fill TODOs in `flake.nix` + `home.nix`, run the first `home-manager switch`. Result: skills for non-Claude agents, Claude plugin marketplaces, CLIs / sandboxed `claude` in `$HOME`, available across every repo. |
 
 The skills are designed for an LLM driving a developer's shell — they
 ask before destructive operations, never overwrite existing configs
@@ -63,7 +63,7 @@ without confirmation, and surface failures verbatim.
 | `plugins-custom` | project      | yes                               | all                  | none           | curated pick          | Pre-enable a subset of Claude Code plugins.            |
 | `library`        | project      | no                                | configurable         | none           | none                  | Pure library consumption. Bring your own packages.     |
 | `dev-env`        | project      | yes                               | none                 | none           | none                  | Adds opt-in Node.js / npm / Playwright via `lib.devEnv.mk`. |
-| `home-manager`   | **user**     | yes (global)                      | configurable         | configurable   | configurable          | Install globally across every project via Home-Manager. |
+| `home-manager`   | **user**     | yes (global)                      | non-Claude agents    | none           | marketplace reg. only | Skills + plugin marketplaces + CLIs globally via Home-Manager. MCP in devShell. |
 
 ## Usage
 
@@ -98,13 +98,17 @@ them by hand.
 `papanix-ai.packages.${system}.default`.
 
 Project templates in this repo also add a sandboxed `claude` binary on
-PATH. The templates now build that wrapper locally via
+PATH. The project-scoped templates build that wrapper locally via
 `import (papanix-ai + "/vendor/agent-sandbox-nix") { inherit pkgs; };`
 so you can customize `allowedPackages`, `stateDirs`, `stateFiles`,
 `extraEnv`, `restrictNetwork`, and `allowedDomains` directly in the
-generated file. If you want to expose a custom package attrset inside
-Claude, use `builtins.attrValues myPkgs` rather than passing the attrset
-directly.
+generated file. The `home-manager` template now uses
+`programs.papanix-ai.sandboxing.*` instead, with safe defaults already
+including the PAPA CLIs plus common helpers like `git`, `rg`, `fd`,
+`jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, and `node`. If you
+want to expose a custom package attrset inside Claude in the project
+templates, use `builtins.attrValues myPkgs` rather than passing the
+attrset directly.
 
 ## Skills
 
@@ -123,10 +127,9 @@ with `enableAll = true;`.
 `lib.mcp.defaultServers` is a convenience set containing the Dynatrace
 and Juno MCP servers. Dynatrace requires `DT_API_TOKEN` and
 `DT_ENVIRONMENT`; Juno needs no extra env vars. Project templates opt
-into that set explicitly. Home-Manager defaults to an empty MCP server
-set, so the `home-manager` template assigns `mcp.servers =
-papanix-ai.lib.mcp.defaultServers;` for you. `.mcp.json` is generated
-on shell entry and wiped on exit.
+into that set explicitly. `.mcp.json` is generated on shell entry and
+wiped on exit. The `home-manager` template does not configure MCP —
+manage it per-project in the devShell.
 
 ## Claude Code plugins
 
@@ -178,8 +181,10 @@ project tree. See the `dev-env` template.
 
 ## Sandbox configuration
 
-Each sandbox-enabled template includes a `sandboxedClaude =
-sandbox.mkSandbox { ... };` block. Common tweaks:
+Each project-scoped sandbox-enabled template includes a
+` sandboxedClaude = sandbox.mkSandbox { ... };` block. The
+`home-manager` template instead uses `programs.papanix-ai.sandboxing`.
+Common tweaks:
 
 - add tools to `allowedPackages` if Claude needs them on PATH inside the sandbox
 - if you have your own package attrset, flatten it with `builtins.attrValues` before appending it to `allowedPackages`
@@ -215,21 +220,16 @@ Passing an attrset directly (for example `allowedPackages = [ myPkgs ];`) fails 
 
 ## Home-Manager (user-scope)
 
-The `home-manager` template is the odd one out — it installs papanix-ai
-into `$HOME` instead of `$PWD`, so the same skills/MCP/plugins/CLIs and
-sandboxed `claude` are available across every repo you open. Apply with
-`home-manager switch --flake .#me --impure` (impure required while
-`acli-pii` is in the selection). Because upstream Home-Manager defaults
-are now explicit opt-in, the template sets `mcp.servers` and
-`cliTools.selection` directly, and builds the sandbox wrapper in
-`home.nix` so you can customize it. Project
-devShells from the other templates still work and layer on top; project
-scope wins on conflicts.
+The `home-manager` template installs into `$HOME` instead of `$PWD`:
 
-See [docs/home-manager.md](docs/home-manager.md) for the conflict
-matrix, the MCP `activation` vs `snippet` strategies, and caveats
-around `~/.claude.json` mutability. Or run
-`/papanix-ai-home-manager-setup` for an interactive walkthrough.
+- **Skills for non-Claude agents** — installed at user scope (opencode, codex, cursor, etc.). Claude skills are excluded here; their context window cost makes per-project, ephemeral devShell loading the right approach.
+- **Claude Code plugin marketplace registration** — registers `papa-ai-knowledgebase` and `rnd-ai-knowledgebase` in `~/.claude/settings.json`. Enable specific plugins via the Claude Code TUI (Settings → Plugin Marketplace).
+- **PAPA CLIs + sandboxed `claude`** — available globally.
+- **MCP stays in the devShell** — project devShells from the other templates handle MCP ephemerally.
+
+Apply with `home-manager switch --flake .#me --impure` (impure required while `acli-pii` is in the selection). Project devShells still work and layer on top; project scope wins on conflicts.
+
+See [docs/home-manager.md](docs/home-manager.md) for the full option matrix and caveats. Or run `/papanix-ai-home-manager-setup` for an interactive walkthrough.
 
 ## Docs
 

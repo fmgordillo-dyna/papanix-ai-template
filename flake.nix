@@ -68,10 +68,9 @@
       };
       home-manager = {
         description = ''
-          USER-SCOPE install via Home-Manager: skills, Claude Code
-          settings, MCP servers, PAPA CLIs, and sandboxed claude land in
-          $HOME and persist across every repo you open. Project devShells
-          still layer on top.
+          USER-SCOPE install via Home-Manager: skills for non-Claude agents
+          (opencode, codex, …), Claude Code plugin marketplaces, PAPA CLIs,
+          and sandboxed claude in $HOME. MCP stays in the project devShell.
         '';
         path = ./home-manager;
       };
