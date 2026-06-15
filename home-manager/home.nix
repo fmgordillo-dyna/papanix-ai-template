@@ -22,37 +22,33 @@
   # https://nix-community.github.io/home-manager/release-notes.html
   home.stateVersion = "24.05";
 
-  # ── papanix-ai (global skills / MCP / Claude settings / CLIs / claude) ─────
+  # ── papanix-ai (skills for non-Claude agents / Claude plugin marketplaces / CLIs / claude) ──────
   programs.papanix-ai = {
     enable = true;
 
     # ── Skills (catalog of agent SKILL.md files) ──────────────────────
-    # Lands under ~/.claude/skills/ by default. Add other agents under
-    # `skills.targets` if you also use opencode / codex / cursor / etc.
+    # Lands under ~/.config/opencode/skills/ by default (and other
+    # enabled agent dirs). Claude Code is intentionally excluded — its
+    # context window pays a cost per skill file; use the project devShell
+    # for ephemeral Claude skill loading instead.
     skills = {
       # NOTE: Bulk-enable everything from both knowledgebases, or pick:
       # enable = [ "papa/dt-jira" "rnd/dt-github" ];
       # enableAll = [ "rnd" ];   # every skill from source "rnd"
       enableAll = true;
 
-      # NOTE: Enable other agent destinations. Defaults to claude only.
-      # targets.opencode.enable = true;
+      targets.claude.enable = false;    # intentionally excluded — use devShell
+      targets.opencode.enable = true;   # opt in other agents as needed
       # targets.codex.enable    = true;
+      # targets.cursor.enable   = true;
     };
 
-    # ── Claude Code settings (~/.claude/settings.json) ────────────────
-    # Two independent concerns: plugin marketplaces + arbitrary settings.
+    # ── Claude Code plugin marketplaces (~/.claude/settings.json) ─────────
+    # Registers plugin marketplaces so Claude Code can discover them. Plugin
+    # enablement happens via the Claude Code TUI (Settings → Plugin
+    # Marketplace) — not here.
     claudeSettings = {
-      # NOTE: Pre-enable plugin marketplaces. Either bulk:
-      enableAll = true;
-      # ...or curate:
-      # enable = [ "papa/papa-jira" "rnd/dt-github" ];
-
       # NOTE: Register custom plugin marketplaces (merged with defaults).
-      # In downstream flakes, custom marketplaces use explicit Claude
-      # Code `source` metadata plus a discovery `path`. Pass `my-mp` via
-      # `extraSpecialArgs` from flake.nix if you want to reference a
-      # custom flake input here.
       # marketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces // {
       #   my-mp = {
       #     name = "my-mp";
@@ -68,39 +64,6 @@
       #     deny  = [];
       #   };
       # };
-    };
-
-    # ── MCP (Model Context Protocol) ──────────────────────────────────
-    mcp = {
-      # NOTE: Home-Manager defaults to no MCP servers, so opt into the
-      # canned set explicitly here.
-      servers = papanix-ai.lib.mcp.defaultServers;
-
-      # NOTE: To add custom servers on top, replace the line above with:
-      # servers = papanix-ai.lib.mcp.defaultServers // {
-      #   github = {
-      #     type    = "stdio";
-      #     command = "npx";
-      #     args    = [ "-y" "@modelcontextprotocol/server-github" ];
-      #     env     = { GITHUB_TOKEN = "\${GITHUB_TOKEN}"; };
-      #   };
-      # };
-
-      # Claude Code at user scope. Cannot symlink ~/.claude.json
-      # (the CLI writes mutable state into it), so we run
-      # `claude mcp add-json --scope user` at activation time.
-      claudeCode = {
-        enable = true;
-
-        # NOTE: "activation" (default) requires `claude` on PATH at HM
-        # switch time. Switch to "snippet" if `claude` is not available
-        # yet — that writes ~/.config/papanix-ai/mcp-servers.json and you
-        # run `claude mcp import-json …` once.
-        # strategy = "snippet";
-      };
-
-      # opencode at user scope (writes ~/.config/opencode/opencode.jsonc).
-      opencode.enable = true;
     };
 
     # ── PAPA CLIs on PATH (~/.nix-profile/bin/…) ──────────────────────
@@ -128,6 +91,7 @@
       # NOTE: Bind read-only config into the sandbox when needed.
       # extraRoDirs = [ "$HOME/.config/some-readonly-tree" ];
       # extraRoFiles = [ "$HOME/.config/readonly.conf" ];
+      extraRwDirs = ["$HOME/.acli-pii" "$HOME/.config/bbctl"];
 
       # NOTE: Pass extra env vars through to the sandboxed process.
       # extraEnv = {
