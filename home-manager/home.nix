@@ -20,7 +20,7 @@
   # Home-Manager's own state version. Pin once; bump when you've read
   # the release notes. See:
   # https://nix-community.github.io/home-manager/release-notes.html
-  home.stateVersion = "24.05";
+  home.stateVersion = "26.05";
 
   # ── papanix-ai (skills for non-Claude agents / Claude plugin marketplaces / CLIs / claude) ──────
   programs.papanix-ai = {
@@ -37,8 +37,8 @@
       # enableAll = [ "rnd" ];   # every skill from source "rnd"
       enableAll = true;
 
-      targets.claude.enable = false;    # intentionally excluded — use devShell
-      targets.opencode.enable = true;   # opt in other agents as needed
+      targets.claude.enable = false; # intentionally excluded — use devShell
+      targets.opencode.enable = true; # opt in other agents as needed
       # targets.codex.enable    = true;
       # targets.cursor.enable   = true;
     };
