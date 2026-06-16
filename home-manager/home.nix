@@ -22,49 +22,9 @@
   # https://nix-community.github.io/home-manager/release-notes.html
   home.stateVersion = "26.05";
 
-  # ── papanix-ai (skills for non-Claude agents / Claude plugin marketplaces / CLIs / claude) ──────
+  # ── papanix-ai (CLIs / sandboxed claude) ─────────────────────────────
   programs.papanix-ai = {
     enable = true;
-
-    # ── Skills (catalog of agent SKILL.md files) ──────────────────────
-    # Lands under ~/.config/opencode/skills/ by default (and other
-    # enabled agent dirs). Claude Code is intentionally excluded — its
-    # context window pays a cost per skill file; use the project devShell
-    # for ephemeral Claude skill loading instead.
-    skills = {
-      # NOTE: Bulk-enable everything from both knowledgebases, or pick:
-      # enable = [ "papa/dt-jira" "rnd/dt-github" ];
-      # enableAll = [ "rnd" ];   # every skill from source "rnd"
-      enableAll = true;
-
-      targets.claude.enable = false; # intentionally excluded — use devShell
-      targets.opencode.enable = true; # opt in other agents as needed
-      # targets.codex.enable    = true;
-      # targets.cursor.enable   = true;
-    };
-
-    # ── Claude Code plugin marketplaces (~/.claude/settings.json) ─────────
-    # Registers plugin marketplaces so Claude Code can discover them. Plugin
-    # enablement happens via the Claude Code TUI (Settings → Plugin
-    # Marketplace) — not here.
-    claudeSettings = {
-      # NOTE: Register custom plugin marketplaces (merged with defaults).
-      # marketplaces = papanix-ai.lib.claudeSettings.defaultMarketplaces // {
-      #   my-mp = {
-      #     name = "my-mp";
-      #     source = { source = "github"; repo = "my-org/my-mp"; };
-      #     path = my-mp + "/plugins";
-      #   };
-      # };
-
-      # NOTE: Custom Claude Code settings (permissions, hooks, env, …).
-      # settings = {
-      #   permissions = {
-      #     allow = [ "Bash(git:*)" "Read(**)" ];
-      #     deny  = [];
-      #   };
-      # };
-    };
 
     # ── PAPA CLIs on PATH (~/.nix-profile/bin/…) ──────────────────────
     cliTools = {

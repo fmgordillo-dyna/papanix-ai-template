@@ -17,7 +17,7 @@
     templates = {
       default = {
         description = ''
-          Batteries included: CLIs + sandboxed claude on PATH, all skills,
+          Batteries included: CLIs + sandboxed claude on PATH
           and the default MCP server set. Perfect to bootstrap a PAPA project.
         '';
         path = ./default;
@@ -25,52 +25,29 @@
       minimal = {
         description = ''
           CLIs plus sandboxed claude on PATH.
-          No skills, no MCP. Nothing wiped on shell exit.
+          No MCP. Nothing wiped on shell exit.
         '';
         path = ./minimal;
       };
-      skills-only = {
-        description = ''
-          Curated subset of AI skills plus sandboxed claude on PATH.
-          No MCP. Good starting point for tailoring the skill catalog.
-        '';
-        path = ./skills-only;
-      };
       mcp-custom = {
         description = ''
-          All skills + sandboxed claude + MCP with an extra server added on
+          Sandboxed claude + MCP with an extra server added on
           top of lib.mcp.defaultServers. Shows how to extend the canned set.
         '';
         path = ./mcp-custom;
-      };
-      plugins-custom = {
-        description = ''
-          All skills + sandboxed claude + curated Claude Code plugin
-          marketplaces. Generates project-scope .claude/settings.json that
-          auto-enables plugins from papa-ai-knowledgebase / rnd-ai-knowledgebase.
-        '';
-        path = ./plugins-custom;
-      };
-      library = {
-        description = ''
-          Consume papanix-ai purely as a library (skill catalog).
-          No CLIs on PATH, no MCP. Bring your own packages.
-        '';
-        path = ./library;
       };
       dev-env = {
         description = ''
           CLIs + sandboxed claude on PATH + opt-in per-contributor dev
           tooling via lib.devEnv.mk: Node.js / npm / corepack and Playwright
-          with nixpkgs-built browsers. Bring your own MCP / skills / plugins.
+          with nixpkgs-built browsers. Bring your own MCP.
         '';
         path = ./dev-env;
       };
       home-manager = {
         description = ''
-          USER-SCOPE install via Home-Manager: skills for non-Claude agents
-          (opencode, codex, …), Claude Code plugin marketplaces, PAPA CLIs,
-          and sandboxed claude in $HOME. MCP stays in the project devShell.
+          USER-SCOPE install via Home-Manager: PAPA CLIs and sandboxed claude
+          in $HOME. MCP stays in the project devShell.
         '';
         path = ./home-manager;
       };

@@ -1,12 +1,12 @@
-# mcp-custom — skills + MCP with an extra server added.
+# mcp-custom — MCP with an extra server added.
 #
 # Shows how to extend the default MCP server set (Dynatrace MCP + Juno MCP)
 # with your own entry — e.g. a local stdio server or a third-party HTTP MCP —
 # while keeping the ephemeral install/wipe semantics.
 #
-# Both .claude/ AND .mcp.json + opencode.jsonc are wiped on shell exit.
+# Both .mcp.json and opencode.jsonc are wiped on shell exit.
 {
-  description = "papanix-ai: devShell with all skills + sandboxed claude + custom MCP servers";
+  description = "papanix-ai: devShell with sandboxed claude + custom MCP servers";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -76,11 +76,6 @@
           # };
         };
 
-        bundle = papanix-ai.lib.skills.mkBundle {
-          inherit pkgs;
-          enableAll = true;
-        };
-
         # NOTE: Extend the default server set instead of replacing it,
         # so you keep Dynatrace MCP + Juno MCP and add your own.
         # Schema is whatever mcp-servers-nix accepts (claude-code flavor).
@@ -107,13 +102,10 @@
             papanix-ai.packages.${system}.default
             sandboxedClaude
           ];
-          shellHook = ''
-            ${papanix-ai.lib.skills.mkShellHook {inherit pkgs bundle;}}
-            ${papanix-ai.lib.mcp.mkShellHook {
-              inherit pkgs;
-              servers = mcpServers;
-            }}
-          '';
+          shellHook = papanix-ai.lib.mcp.mkShellHook {
+            inherit pkgs;
+            servers = mcpServers;
+          };
         };
       }
     );

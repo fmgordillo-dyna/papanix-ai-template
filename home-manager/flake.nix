@@ -1,15 +1,13 @@
 # home-manager — papanix-ai at USER scope.
 #
-# This is a starter Home-Manager configuration that installs skills for
-# non-Claude agents (opencode, codex, …), Claude Code plugin
-# marketplaces, PAPA CLIs, and sandboxed `claude` wrapper globally —
-# into your $HOME, available across every repo you open.
+# This is a starter Home-Manager configuration that installs PAPA CLIs
+# and a sandboxed `claude` wrapper globally — into your $HOME, available
+# across every repo you open.
 #
-# Differences from the project-scope templates (default/, skills-only/,
-# …): those drop files into $PWD/.claude/ etc. and wipe them on
-# `nix develop` exit. THIS template lives in your $HOME and persists.
-# Per-project devShells still work and layer on top — project scope
-# wins on duplicate keys.
+# Differences from the project-scope templates (default/, mcp-custom/, …):
+# those drop .mcp.json into $PWD and wipe them on `nix develop` exit.
+# THIS template lives in your $HOME and persists. Per-project devShells
+# still work and layer on top — project scope wins on duplicate keys.
 #
 # Apply with:
 #   home-manager switch --flake .#me --impure
@@ -27,13 +25,6 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     papanix-ai.url = "github:fmgordillo-dyna/papanix-ai";
-
-    # NOTE: Uncomment to add a custom plugin marketplace repo and pass it
-    # into home.nix via extraSpecialArgs.
-    # my-mp = {
-    #   url = "github:my-org/my-mp";
-    #   flake = false;
-    # };
   };
 
   outputs = inputs @ {
@@ -86,10 +77,6 @@
         ./home.nix
       ];
 
-      # Pass the papanix-ai flake into ./home.nix so we can reference
-      # its defaults (lib.mcp.defaultServers, etc.). If you add a custom
-      # marketplace input above, also pass it here, e.g.
-      #   extraSpecialArgs = { inherit papanix-ai; my-mp = inputs.my-mp; };
       extraSpecialArgs = {inherit papanix-ai;};
     };
   };
