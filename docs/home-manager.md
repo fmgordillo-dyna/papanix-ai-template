@@ -192,10 +192,10 @@ programs.papanix-ai = {
     claude.package = pkgs.claude-code;  # override default
 
     pi.enable = true;
-    # pi.package = pkgs.chaotic.pi-coding-agent;  # override if needed
+    # pi.package = pkgs.master.pi-coding-agent;  # override if needed
 
     opencode.enable = true;
-    # opencode.package = pkgs.chaotic.opencode;  # override if needed
+    # opencode.package = pkgs.master.opencode;  # override if needed
   };
 };
 ```
