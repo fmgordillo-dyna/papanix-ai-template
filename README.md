@@ -99,16 +99,19 @@ identity / machine-specific edits. `/papanix-ai-template-init` and
 explicit `cliPackages` list so you can keep the full bundle or trim it
 down per repo.
 
-Project templates in this repo also add a sandboxed `claude` binary on
-PATH. They build that wrapper via
-`papanix-ai.lib.sandboxing.mkClaudeSandbox`, which brings in the chosen
-CLI set plus safe defaults for common helpers, state dirs, and auth env
+Project templates in this repo also add sandboxed agent binaries on PATH:
+`claude`, `pi`, and `opencode` (depending on which you enable). They use
+`lib.sandboxing.mk{Claude,Pi,Opencode}Sandbox`, which brings in the chosen
+CLI set plus safe defaults for common helpers, state dirs, and shared auth env
 vars. The `home-manager` template uses `programs.papanix-ai.sandboxing.*`
-instead.
+instead, with per-agent enable flags: `claude.enable`, `pi.enable`, `opencode.enable`.
 
-If Claude needs SSH remotes from inside the sandbox, enable
-`exposeSsh = true;`. If you want to expose a custom package attrset on
-PATH inside Claude, flatten it first with `builtins.attrValues myPkgs`.
+All three agents share a common set of provider API keys:
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`,
+and `GITHUB_TOKEN`. If any agent needs SSH remotes from inside the sandbox,
+enable `exposeSsh = true;` (applies to all enabled agents). If you want to
+expose a custom package attrset on PATH inside an agent, flatten it first
+with `builtins.attrValues myPkgs`.
 
 ## MCP
 
@@ -154,17 +157,20 @@ Nix-built browser bundle instead of downloading at runtime. See the
 
 ## Sandbox configuration
 
-Each project-scoped sandbox-enabled template includes a
-`sandboxedClaude = papanix-ai.lib.sandboxing.mkClaudeSandbox { ... };`
-block. The `home-manager` template instead uses
-`programs.papanix-ai.sandboxing`. Common tweaks:
+Each project-scoped sandbox-enabled template includes a block to build
+sandboxed agent wrappers (e.g., `sandboxedClaude =
+papanix-ai.lib.sandboxing.mkClaudeSandbox { ... };`). The `home-manager`
+template instead uses `programs.papanix-ai.sandboxing` with nested per-agent
+enable flags. Common tweaks:
 
-- add tools to `extraAllowedPackages` if Claude needs them on PATH
-- add persistent paths with `extraRwDirs` / `extraRwFiles`
-- bind read-only config with `extraRoDirs` / `extraRoFiles`
-- tighten egress with `restrictNetwork = true;` plus `allowedDomains = { ... };`
-- pass through extra env vars with `extraEnv`
-- enable `exposeSsh = true;` if Claude needs SSH remotes
+- Enable agents: `claude.enable = true;`, `pi.enable = true;`, `opencode.enable = true;`
+- Add tools to `extraAllowedPackages` if agents need them on PATH
+- Add persistent paths with `extraRwDirs` / `extraRwFiles`
+- Bind read-only config with `extraRoDirs` / `extraRoFiles`
+- Tighten egress with `restrictNetwork = true;` plus `allowedDomains = { ... };`
+- Pass through extra env vars with `extraEnv`
+- Enable `exposeSsh = true;` if agents need SSH remotes
+- Override default packages per agent (`.claude.package`, `.pi.package`, `.opencode.package`)
 
 Example:
 

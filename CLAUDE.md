@@ -107,6 +107,12 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   `extraAllowedPackages`, `extraRwDirs`, `extraRoDirs`, `extraRwFiles`,
   `extraRoFiles`, `extraEnv`, `restrictNetwork`, `allowedDomains`, and
   `exposeSsh`.
+- `papanix-ai.lib.sandboxing.mkPiSandbox { ... }` — official helper
+  for the sandboxed `pi` wrapper. Shares the same configuration knobs
+  as Claude.
+- `papanix-ai.lib.sandboxing.mkOpencodeSandbox { ... }` — official helper
+  for the sandboxed `opencode` wrapper. Shares the same configuration knobs
+  as Claude.
 - `papanix-ai.lib.devEnv.mk { pkgs; nodejs?; playwright?; extraPackages?; }`
   — per-contributor dev-environment helper. Returns
   `{ packages; shellHook; }`. `nodejs` accepts `true` or
@@ -116,8 +122,11 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   the Nix-built browser bundle.
 - `papanix-ai.homeManagerModules.default` — exposes
   `programs.papanix-ai.*` for the `home-manager/` template. In this repo
-  the template uses it for `cliTools`, `sandboxing`, optional `devEnv`,
-  and optional `skills`.
+  the template uses it for `cliTools`, per-agent sandboxing (`.claude.enable`,
+  `.pi.enable`, `.opencode.enable`) with shared knobs, optional `devEnv`,
+  and optional `skills`. All sandboxed agents share provider API keys:
+  `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`,
+  and `GITHUB_TOKEN`. Claude additionally reads `CLAUDE_CODE_OAUTH_TOKEN`.
 - `papanix-ai.lib.skills.mkShellHook { pkgs; skillsInputs; enable?; extra?; }`
   — ephemeral shellHook that symlinks resolved skills into
   `$PWD/.agents/skills/` on devShell entry and removes them on exit.

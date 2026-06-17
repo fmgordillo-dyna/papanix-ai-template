@@ -95,7 +95,7 @@ Two files, a handful of knobs to confirm:
 | `home.homeDirectory` | `/home/<user>` on Linux/WSL, `/Users/<user>` on macOS. |
 | `home.stateVersion` | Leave as-is on first install; only bump after reading the Home-Manager release notes. |
 | `programs.papanix-ai.cliTools.selection` | The template sets five CLIs explicitly (`acli-pii`, `aimgr`, `bbctl`, `dtctl`, `junoctl`). Drop `acli-pii` if you want a pure switch (no `--impure`). |
-| `programs.papanix-ai.sandboxing` | Enables the sandboxed `claude` wrapper globally. Safe defaults already include the PAPA CLIs plus helpers like `git`, `rg`, `fd`, `jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, `node`, and `nix`. Extend with `extraAllowedPackages`, `extraRwDirs`, `extraRoDirs`, `extraRwFiles`, `extraRoFiles`, `extraEnv`, `restrictNetwork`, `allowedDomains`, and `exposeSsh`. |
+| `programs.papanix-ai.sandboxing` | Enables sandboxed agent wrappers globally (Claude, Pi, OpenCode). Nested under `sandboxing` are per-agent enable flags: `claude.enable`, `pi.enable`, `opencode.enable`. Shared knobs (`extraAllowedPackages`, `extraRwDirs`, `extraRoDirs`, `extraRwFiles`, `extraRoFiles`, `extraEnv`, `restrictNetwork`, `allowedDomains`, `exposeSsh`) apply identically to all enabled agents. Safe defaults include the PAPA CLIs plus helpers like `git`, `rg`, `fd`, `jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, `node`, and `nix`. |
 | `programs.papanix-ai.skills` (optional) | Set `skills.enable = true` for all skills from both internal repos, `skills.enable = [ "repo/skill-name" ]` for a selective subset, or leave the default `false`. Add local paths via `skills.extra = { my-skill = ./path; }`. Skills land at `~/.agents/skills/`. Requires `--impure` whenever `skills.enable != false`. |
 | `programs.papanix-ai.devEnv` (optional) | Uncomment if you want Node.js / Playwright / extra packages at user scope too. |
 
@@ -107,7 +107,9 @@ Two files, a handful of knobs to confirm:
 | Option | Path / effect | Mechanism |
 |---|---|---|
 | `cliTools.selection` | `~/.nix-profile/bin/...` | regular Nix package install |
-| `sandboxing.enable` | `claude` on PATH | high-priority sandboxed wrapper built by the module |
+| `sandboxing.claude.enable` | `claude` on PATH | high-priority sandboxed wrapper built by the module |
+| `sandboxing.pi.enable` | `pi` on PATH | high-priority sandboxed wrapper built by the module |
+| `sandboxing.opencode.enable` | `opencode` on PATH | high-priority sandboxed wrapper built by the module |
 | `devEnv` | PATH additions + Playwright env vars | Home-Manager module wiring |
 | `skills.enable` | `~/.agents/skills/<name>/` symlinks | persistent `home.file` entries via the module |
 
@@ -117,7 +119,7 @@ You can use both at the same time. **Project scope wins on conflicts**.
 
 | Concern | User scope (HM) | Project scope (devShell) | On conflict |
 |---|---|---|---|
-| CLIs / sandboxed `claude` | global PATH | devShell PATH while in `nix develop` | devShell wins inside the shell |
+| CLIs / sandboxed agents | global PATH (claude, pi, opencode if enabled) | devShell PATH while in `nix develop` | devShell wins inside the shell |
 | MCP | not configured here | `$PWD/.mcp.json`, `$PWD/opencode.jsonc` in MCP-enabled templates | project only |
 | Agent skills | `~/.agents/skills/` (persistent, if `skills.enable != false`) | `$PWD/.agents/skills/` (ephemeral, if project devShell wires `lib.skills.mkShellHook`) | project copy used inside the shell |
 | Per-contributor dev tooling | global if enabled in `home.nix` | project-local if enabled in `dev-env` or custom shell | devShell wins inside the shell |
@@ -133,13 +135,33 @@ programs.papanix-ai = {
 };
 ```
 
-### Extend the sandbox wrapper
+### Enable sandboxed agent wrappers
+
+Start with the per-agent enable flags:
 
 ```nix
 programs.papanix-ai = {
   enable = true;
   sandboxing = {
-    enable = true;
+    claude.enable = true;   # sandboxed Claude → `claude` binary
+    pi.enable = true;       # sandboxed Pi → `pi` binary
+    opencode.enable = true; # sandboxed OpenCode → `opencode` binary
+  };
+};
+```
+
+### Extend the sandbox wrappers
+
+Shared knobs apply identically to every enabled agent:
+
+```nix
+programs.papanix-ai = {
+  enable = true;
+  sandboxing = {
+    claude.enable = true;
+    pi.enable = true;
+    opencode.enable = true;
+
     extraAllowedPackages = with pkgs; [ gh kubectl ];
     extraRwDirs = [ "$HOME/.config/gh" "$HOME/.kube" ];
     extraRwFiles = [ "$HOME/.gitconfig" ];
@@ -153,7 +175,27 @@ programs.papanix-ai = {
     allowedDomains = {
       "github.com" = [ "GET" "HEAD" ];
       "api.anthropic.com" = "*";
+      "api.openai.com" = "*";
     };
+    exposeSsh = true;       # enable SSH authentication
+  };
+};
+```
+
+Per-agent package overrides:
+
+```nix
+programs.papanix-ai = {
+  enable = true;
+  sandboxing = {
+    claude.enable = true;
+    claude.package = pkgs.claude-code;  # override default
+
+    pi.enable = true;
+    # pi.package = pkgs.chaotic.pi-coding-agent;  # override if needed
+
+    opencode.enable = true;
+    # opencode.package = pkgs.chaotic.opencode;  # override if needed
   };
 };
 ```
@@ -211,8 +253,8 @@ as `<repo>--<name>/` to avoid silent overwrites (e.g.,
   `programs.papanix-ai.sandboxing.enable = true;` and only add tools via
   `extraAllowedPackages` when you truly need them.
 - **SSH inside the sandbox is opt-in.** Set
-  `programs.papanix-ai.sandboxing.exposeSsh = true;` if Claude needs to
-  talk to SSH remotes from inside the wrapper.
+  `programs.papanix-ai.sandboxing.exposeSsh = true;` if any enabled agent needs to
+  talk to SSH remotes from inside the sandbox.
 - **MCP is intentionally project-scope.** This template does not manage
   `.mcp.json` or `opencode.jsonc`; use a project devShell for that.
 - **No Claude plugin marketplace registration here.** If you need
@@ -223,7 +265,13 @@ as `<repo>--<name>/` to avoid silent overwrites (e.g.,
   again if tools are not yet on PATH.
 - **No NixOS / nix-darwin module here.** HM-on-darwin works fine via the
   standard `home-manager.darwinModules.home-manager` bridge. If you want
-  the PAPA CLIs at system scope, file a request.
+  the PAPA CLIs or sandboxed agents at system scope, file a request.
+- **Shared provider API keys.** All sandboxed agents (Claude, Pi, OpenCode)
+  read a common set of environment variables: `ANTHROPIC_API_KEY`,
+  `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, and `GITHUB_TOKEN`.
+  This lets users authenticate with whichever LLM provider they configure
+  in each agent without extra wiring. Claude additionally reads
+  `CLAUDE_CODE_OAUTH_TOKEN`.
 
 ## Troubleshooting
 
