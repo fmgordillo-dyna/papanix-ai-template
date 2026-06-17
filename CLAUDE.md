@@ -19,10 +19,13 @@ Every template is a standalone `flake.nix` in its own subdirectory.
 This repo does **not** package code, build artifacts, or run tests. It
 is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
 
-> Important: this repo no longer installs agent skills or Claude Code
-> plugin marketplaces declaratively. The `skills/` directory contains
-> onboarding SKILL files for agents; the templates themselves focus on
-> CLIs, sandboxing, MCP, and optional user-scope setup.
+> Important: this repo does **not** install Claude plugin marketplaces
+> declaratively. The `skills/` directory contains onboarding SKILL files
+> for agents. The templates focus on CLIs, sandboxing, MCP, and optional
+> user-scope setup. The `home-manager` template can install agent skills
+> persistently at `~/.agents/skills/` via
+> `programs.papanix-ai.skills.enable` (backed by `papanix-ai`'s skills
+> feature).
 
 ## Layout
 
@@ -68,8 +71,10 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   commands and diagnose failures; they should not duplicate doc prose.
 - All three SKILLs reference each other. When changing one, audit the
   other two for stale cross-links.
-- Do not tell users that templates install skills or plugin
-  marketplaces declaratively; that is no longer true in this repo.
+- Do not tell users that Claude plugin marketplaces are installed
+  declaratively by any template here. The `home-manager` template CAN
+  install agent skills from the internal knowledge-base repos via
+  `programs.papanix-ai.skills.enable`; it is correct to mention that.
 
 ## When editing docs
 
@@ -111,8 +116,19 @@ is a registry of starter `flake.nix` files + Markdown docs + SKILLs.
   the Nix-built browser bundle.
 - `papanix-ai.homeManagerModules.default` — exposes
   `programs.papanix-ai.*` for the `home-manager/` template. In this repo
-  the template uses it for `cliTools`, `sandboxing`, and optional
-  `devEnv`.
+  the template uses it for `cliTools`, `sandboxing`, optional `devEnv`,
+  and optional `skills`.
+- `papanix-ai.lib.skills.mkShellHook { pkgs; skillsInputs; enable?; extra?; }`
+  — ephemeral shellHook that symlinks resolved skills into
+  `$PWD/.agents/skills/` on devShell entry and removes them on exit.
+  `skillsInputs` must carry `rnd-ai-knowledgebase` and/or
+  `papa-ai-knowledgebase` as flake inputs.
+- `papanix-ai.lib.skills.resolveSkills { skillsInputs; enable?; extra?; }`
+  — pure resolver returning `{ <installDir> = <storePath>; }`. Used when
+  you need the path map without a shellHook.
+- `apps.<system>.skills-install` — non-ephemeral install of all skills
+  into `$PWD/.agents/skills/` (or a custom target path). Run via
+  `nix run github:fmgordillo-dyna/papanix-ai#skills-install`.
 
 ## Formatting
 

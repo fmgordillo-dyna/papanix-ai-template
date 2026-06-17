@@ -79,6 +79,20 @@
     #   playwright = true;            # browsers + PLAYWRIGHT_* env vars
     #   # extraPackages = with pkgs; [ jq gh ];
     # };
+
+    # ── Declarative agent skills (optional) ───────────────────────────
+    # NOTE: Install skills from the internal knowledge-base repos
+    # (rnd-ai-knowledgebase, papa-ai-knowledgebase) at
+    # ~/.agents/skills/ as persistent symlinks consumed by OpenCode,
+    # Pi, Devin CLI, and GitHub Copilot CLI.
+    #
+    # Requires `home-manager switch … --impure` when skills.enable != false.
+    #
+    # skills = {
+    #   enable = true;     # all skills from both repos
+    #   # enable = [ "papa-ai-knowledgebase/dt-jira" ];  # selective
+    #   # extra = { my-local-skill = ./path/to/skill; };  # local additions
+    # };
   };
 
   # ── Anything else you want in your $HOME ─────────────────────────────

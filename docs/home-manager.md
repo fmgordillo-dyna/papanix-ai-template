@@ -13,10 +13,11 @@ The `home-manager` template gives you that user-scope baseline:
 
 Per-project devShells still work and layer on top.
 
-> Note: this template intentionally does **not** install agent skills,
-> Claude Code plugin marketplaces, or MCP declaratively. Keep MCP in
-> project devShells; manage any agent-specific skill or plugin setup
-> separately.
+> Note: this template does **not** install Claude plugin marketplaces or
+> MCP declaratively. Keep MCP in project devShells. Agent skills from the
+> internal knowledge-base repos can be installed persistently at
+> `~/.agents/skills/` via `programs.papanix-ai.skills.enable` — see
+> [Declarative skills](#declarative-skills) below.
 
 If you've never used Home-Manager, the fastest path is the guided
 walkthrough — let an agent invoke `/papanix-ai-home-manager-setup`, or
@@ -95,6 +96,7 @@ Two files, a handful of knobs to confirm:
 | `home.stateVersion` | Leave as-is on first install; only bump after reading the Home-Manager release notes. |
 | `programs.papanix-ai.cliTools.selection` | The template sets five CLIs explicitly (`acli-pii`, `aimgr`, `bbctl`, `dtctl`, `junoctl`). Drop `acli-pii` if you want a pure switch (no `--impure`). |
 | `programs.papanix-ai.sandboxing` | Enables the sandboxed `claude` wrapper globally. Safe defaults already include the PAPA CLIs plus helpers like `git`, `rg`, `fd`, `jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, `node`, and `nix`. Extend with `extraAllowedPackages`, `extraRwDirs`, `extraRoDirs`, `extraRwFiles`, `extraRoFiles`, `extraEnv`, `restrictNetwork`, `allowedDomains`, and `exposeSsh`. |
+| `programs.papanix-ai.skills` (optional) | Set `skills.enable = true` for all skills from both internal repos, `skills.enable = [ "repo/skill-name" ]` for a selective subset, or leave the default `false`. Add local paths via `skills.extra = { my-skill = ./path; }`. Skills land at `~/.agents/skills/`. Requires `--impure` whenever `skills.enable != false`. |
 | `programs.papanix-ai.devEnv` (optional) | Uncomment if you want Node.js / Playwright / extra packages at user scope too. |
 
 > **For agents:** `/papanix-ai-home-manager-setup` walks the user
@@ -107,6 +109,7 @@ Two files, a handful of knobs to confirm:
 | `cliTools.selection` | `~/.nix-profile/bin/...` | regular Nix package install |
 | `sandboxing.enable` | `claude` on PATH | high-priority sandboxed wrapper built by the module |
 | `devEnv` | PATH additions + Playwright env vars | Home-Manager module wiring |
+| `skills.enable` | `~/.agents/skills/<name>/` symlinks | persistent `home.file` entries via the module |
 
 ## Coexistence with project devShells
 
@@ -116,6 +119,7 @@ You can use both at the same time. **Project scope wins on conflicts**.
 |---|---|---|---|
 | CLIs / sandboxed `claude` | global PATH | devShell PATH while in `nix develop` | devShell wins inside the shell |
 | MCP | not configured here | `$PWD/.mcp.json`, `$PWD/opencode.jsonc` in MCP-enabled templates | project only |
+| Agent skills | `~/.agents/skills/` (persistent, if `skills.enable != false`) | `$PWD/.agents/skills/` (ephemeral, if project devShell wires `lib.skills.mkShellHook`) | project copy used inside the shell |
 | Per-contributor dev tooling | global if enabled in `home.nix` | project-local if enabled in `dev-env` or custom shell | devShell wins inside the shell |
 
 ## Worked examples
@@ -168,11 +172,41 @@ programs.papanix-ai = {
 };
 ```
 
+### Enable declarative agent skills
+
+```nix
+programs.papanix-ai = {
+  enable = true;
+
+  # Install all skills from both internal knowledge-base repos:
+  skills.enable = true;
+
+  # Or select only specific skills:
+  # skills.enable = [ "papa-ai-knowledgebase/dt-jira" ];
+
+  # Optionally add a local or fetched skill directory:
+  # skills.extra = { my-team-skill = ./local/my-skill; };
+};
+```
+
+Symlinks land at `~/.agents/skills/<name>/`. Consumed by OpenCode, Pi,
+Devin CLI, and GitHub Copilot CLI. **Requires `--impure`** because the
+two knowledge-base repos are SSO-gated private GitHub repos:
+
+```bash
+home-manager switch --flake .#<name> --impure
+```
+
+When the same skill name exists in both repos the directory is prefixed
+as `<repo>--<name>/` to avoid silent overwrites (e.g.,
+`rnd-ai-knowledgebase--dt-jira/` and `papa-ai-knowledgebase--dt-jira/`).
+
 ## Caveats
 
-- **Impurity from `acli-pii`.** `home-manager switch --flake … --impure`
-  is needed while `acli-pii` is in `cliTools.selection`. Drop it from
-  the selection for a pure build.
+- **`--impure` is required for private packages or skills.** Use
+  `home-manager switch --flake … --impure` while `acli-pii` is in
+  `cliTools.selection` *or* while `skills.enable != false`. Both reasons
+  involve SSO-gated private repos that are fetched at eval time.
 - **Safe defaults are already included inside the sandbox.** Start with
   `programs.papanix-ai.sandboxing.enable = true;` and only add tools via
   `extraAllowedPackages` when you truly need them.
@@ -181,10 +215,9 @@ programs.papanix-ai = {
   talk to SSH remotes from inside the wrapper.
 - **MCP is intentionally project-scope.** This template does not manage
   `.mcp.json` or `opencode.jsonc`; use a project devShell for that.
-- **No declarative skills / marketplace registration here.** If you need
+- **No Claude plugin marketplace registration here.** If you need
   slash-command onboarding docs, use the `skills/` directory in this
-  repo directly. If you need Claude plugin marketplaces, configure them
-  outside this template.
+  repo directly.
 - **First switch with the sandbox wrapper may need a second pass.** Open
   a new shell after Home-Manager installs the wrapper and run the switch
   again if tools are not yet on PATH.

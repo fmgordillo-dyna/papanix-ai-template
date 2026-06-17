@@ -11,10 +11,12 @@
 This repo ships **flake templates** for the supported install shapes and
 **guided onboarding skills** that walk a first-time user through setup.
 
-> Note: this repo no longer installs agent skills or Claude Code plugin
-> marketplaces declaratively. The `skills/` directory contains
+> Note: this repo does not install Claude plugin marketplaces
+> declaratively. The `skills/` directory contains
 > onboarding SKILL files for agents; the templates themselves focus on
-> CLIs, sandboxing, MCP, and optional user-scope setup.
+> CLIs, sandboxing, MCP, and optional user-scope setup. The
+> `home-manager` template can install agent skills persistently via
+> `programs.papanix-ai.skills.enable`.
 
 ---
 

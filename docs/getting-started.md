@@ -5,9 +5,11 @@ on this machine. If your agent is doing this for you, ask it to run
 `/papanix-ai-setup` (Nix + credentials + project template) or
 `/papanix-ai-home-manager-setup` (user-scope across every repo).
 
-> Note: this repo no longer installs agent skills or Claude Code plugin
-> marketplaces declaratively. The templates here focus on CLIs,
-> sandboxing, MCP, and optional Home-Manager / dev-environment wiring.
+> Note: this repo does not install Claude plugin marketplaces
+> declaratively. The templates here focus on CLIs, sandboxing, MCP, and
+> optional Home-Manager / dev-environment wiring. The `home-manager`
+> template can install agent skills at `~/.agents/skills/` via
+> `programs.papanix-ai.skills.enable`.
 
 ## 1. Install Nix
 

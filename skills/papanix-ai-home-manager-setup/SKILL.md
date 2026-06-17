@@ -13,9 +13,10 @@ End-to-end Home-Manager onboarding for papanix-ai. Source of truth:
 This skill is the **interactive guide**. Diagnose, run, verify, fill
 TODOs. Do not duplicate doc prose.
 
-> Note: this template intentionally does not install agent skills,
-> Claude plugin marketplaces, or MCP declaratively. It is for global
-> CLIs, sandboxed `claude`, and optional user-scope dev tooling.
+> Note: this template does not install Claude plugin marketplaces or MCP
+> declaratively. It is for global CLIs, sandboxed `claude`, optional
+> user-scope dev tooling, and optional declarative agent skills at
+> `~/.agents/skills/`.
 
 ## Step 0 — Prerequisites
 
@@ -133,6 +134,19 @@ Read the file and walk these prompts:
    Ask whether they want Node.js / Playwright / extra packages at user
    scope too. If yes, uncomment and fill the block.
 
+7. **`programs.papanix-ai.skills` (optional)**
+   Ask whether they want agent skills from the internal knowledge-base
+   repos installed persistently at `~/.agents/skills/`.
+
+   - `skills.enable = true` — all skills from both `rnd-ai-knowledgebase`
+     and `papa-ai-knowledgebase`.
+   - `skills.enable = [ "papa-ai-knowledgebase/dt-jira" ]` — selective.
+   - `skills.extra = { my-skill = ./path; }` — local/fetched additions.
+
+   Warn: enabling skills requires `--impure` on every subsequent
+   `home-manager switch` (SSO-gated private repos, same PAT auth as
+   `junoctl`).
+
 Apply edits via `Edit`. After each edit, show the updated section.
 
 ## Step 6 — Switch
@@ -143,13 +157,15 @@ nix run home-manager/master -- switch --flake .#<name> --impure
 ```
 
 Use the name from Step 4. Drop `--impure` only if they removed
-`acli-pii` from the selection.
+`acli-pii` from the selection **and** `skills.enable` is `false`.
 
 This will:
 
 - install the selected PAPA CLIs into the user profile,
 - install the sandboxed `claude` wrapper if enabled,
-- install optional devEnv packages / env vars if enabled.
+- install optional devEnv packages / env vars if enabled,
+- symlink resolved skill directories to `~/.agents/skills/` if
+  `skills.enable != false`.
 
 Failure map:
 
@@ -182,6 +198,8 @@ Concise summary:
 - Which CLIs landed globally.
 - Whether sandboxed `claude` is enabled.
 - Whether optional user-scope dev tooling was enabled.
+- Whether skills were enabled and which `~/.agents/skills/<name>/`
+  directories were created.
 - That project devShells still layer on top and win on conflicts.
 - Day-2 command:
   ```bash
@@ -193,7 +211,8 @@ Concise summary:
 
 - **Never** rewrite an existing `~/.config/home-manager/` setup without
   explicit yes.
-- **Never** remove `--impure` unless `acli-pii` is no longer selected.
+- **Never** remove `--impure` unless `acli-pii` is no longer selected
+  **and** `skills.enable` is `false`.
 - If a step needs the user's own terminal (browser auth, `sudo`, etc.),
   tell them to run it with `!` so output lands in the session.
 - Non-auth build failures from upstream `papanix-ai` → surface the exact
