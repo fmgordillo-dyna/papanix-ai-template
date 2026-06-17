@@ -22,17 +22,17 @@
   # https://nix-community.github.io/home-manager/release-notes.html
   home.stateVersion = "26.05";
 
-  # ── papanix-ai (CLIs / sandboxed claude) ─────────────────────────────
+  # ── papanix-ai (CLIs / sandboxed `claude`) ───────────────────────────
   programs.papanix-ai = {
     enable = true;
 
     # ── PAPA CLIs on PATH (~/.nix-profile/bin/…) ──────────────────────
     cliTools = {
       enable = true;
-      selection = ["acli-pii" "bbctl" "dtctl" "junoctl"];
+      selection = ["acli-pii" "aimgr" "bbctl" "dtctl" "junoctl"];
 
       # NOTE: Drop `acli-pii` for a pure switch:
-      # selection = [ "bbctl" "dtctl" "junoctl" ];
+      # selection = [ "aimgr" "bbctl" "dtctl" "junoctl" ];
     };
 
     # ── Sandboxed Claude Code wrapper ─────────────────────────────────
@@ -65,6 +65,9 @@
       #   "github.com" = [ "GET" "HEAD" ];
       #   "api.anthropic.com" = "*";
       # };
+
+      # NOTE: Enable if Claude needs SSH remotes from inside the sandbox.
+      # exposeSsh = true;
     };
 
     # ── Per-contributor dev tooling (optional) ────────────────────────

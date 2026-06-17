@@ -84,7 +84,7 @@ nix --version
 nix flake show github:fmgordillo-dyna/papanix-ai
 ```
 
-Output should list `acli-pii`, `bbctl`, `dtctl`, `junoctl`.
+Output should list `acli-pii`, `aimgr`, `bbctl`, `dtctl`, `junoctl`.
 
 ## Troubleshooting
 
@@ -169,4 +169,4 @@ Reference: https://github.com/DeterminateSystems/nix-installer/issues/1382
 
 Configure auth before initializing a template: [auth-setup.md](auth-setup.md).
 
-Or invoke the guided setup skill: `/papanix-ai-setup` (walks through Nix install, SSH keys, GitHub SSO, and verifies all four CLIs build).
+Or invoke the guided setup skill: `/papanix-ai-setup` (walks through Nix install, SSH keys, GitHub SSO, and verifies the CLI set builds).

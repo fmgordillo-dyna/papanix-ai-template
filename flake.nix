@@ -1,5 +1,5 @@
 {
-  description = "A minimal example with comments to modify";
+  description = "Templates for papanix-ai CLIs, sandboxed `claude`, MCP, and Home-Manager";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable"; # Base repository
@@ -17,28 +17,28 @@
     templates = {
       default = {
         description = ''
-          Batteries included: CLIs + sandboxed claude on PATH
-          and the default MCP server set. Perfect to bootstrap a PAPA project.
+          CLIs + sandboxed `claude` on PATH + the default MCP server set.
+          Good starting point for most PAPA projects.
         '';
         path = ./default;
       };
       minimal = {
         description = ''
-          CLIs plus sandboxed claude on PATH.
-          No MCP. Nothing wiped on shell exit.
+          CLIs + sandboxed `claude` on PATH.
+          No MCP. No shell hook.
         '';
         path = ./minimal;
       };
       mcp-custom = {
         description = ''
-          Sandboxed claude + MCP with an extra server added on
+          Sandboxed `claude` + MCP with an extra server added on
           top of lib.mcp.defaultServers. Shows how to extend the canned set.
         '';
         path = ./mcp-custom;
       };
       dev-env = {
         description = ''
-          CLIs + sandboxed claude on PATH + opt-in per-contributor dev
+          CLIs + sandboxed `claude` on PATH + opt-in per-contributor dev
           tooling via lib.devEnv.mk: Node.js / npm / corepack and Playwright
           with nixpkgs-built browsers. Bring your own MCP.
         '';
@@ -46,7 +46,7 @@
       };
       home-manager = {
         description = ''
-          USER-SCOPE install via Home-Manager: PAPA CLIs and sandboxed claude
+          USER-SCOPE install via Home-Manager: PAPA CLIs and sandboxed `claude`
           in $HOME. MCP stays in the project devShell.
         '';
         path = ./home-manager;

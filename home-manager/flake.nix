@@ -18,7 +18,7 @@
 #
 # If you're new to Home-Manager: https://nix-community.github.io/home-manager/
 {
-  description = "papanix-ai user-scope (Home-Manager) starter with sandboxed claude";
+  description = "papanix-ai user-scope (Home-Manager) starter with sandboxed `claude`";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

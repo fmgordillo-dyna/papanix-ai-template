@@ -2,8 +2,12 @@
 
 End-to-end first-time install for someone who has never used papanix-ai
 on this machine. If your agent is doing this for you, ask it to run
-`/papanix-ai-setup` (Nix + credentials + project devShell) or
+`/papanix-ai-setup` (Nix + credentials + project template) or
 `/papanix-ai-home-manager-setup` (user-scope across every repo).
+
+> Note: this repo no longer installs agent skills or Claude Code plugin
+> marketplaces declaratively. The templates here focus on CLIs,
+> sandboxing, MCP, and optional Home-Manager / dev-environment wiring.
 
 ## 1. Install Nix
 
@@ -30,19 +34,15 @@ Follow [auth-setup.md](auth-setup.md). You need:
 
 ## 3. Pick a template
 
-The shape of papanix-ai you want depends on where you want it active.
 Pick one of:
 
-| Template         | When to pick it |
-|------------------|-----------------|
-| `default`        | A team project. Wires CLIs + sandboxed `claude` + skills + the default MCP server set + Claude plugins into the repo via `nix develop`. Cleaned up on exit. |
-| `minimal`        | Just the CLIs + sandboxed `claude`. Nothing ephemeral, nothing wiped. |
-| `skills-only`    | Curated skill subset + sandboxed `claude`. No MCP, no plugins. |
-| `mcp-custom`     | All skills + sandboxed `claude` + extra MCP servers on top of `lib.mcp.defaultServers`. |
-| `plugins-custom` | All skills + sandboxed `claude` + curated Claude Code plugin marketplaces. |
-| `library`        | Library consumption only. Bring your own packages. |
-| `dev-env`        | CLIs + sandboxed `claude` + opt-in Node.js / Playwright via `lib.devEnv.mk`. |
-| `home-manager`   | **User-scope** install. Lives in `$HOME` and follows you across every repo, including sandboxed `claude`. See [home-manager.md](home-manager.md). |
+| Template | When to pick it |
+|---|---|
+| `default` | A team project. Wires CLIs + sandboxed `claude` + the default MCP server set into the repo via `nix develop`. MCP config is cleaned up on exit. |
+| `minimal` | Just the CLIs + sandboxed `claude`. Nothing ephemeral, nothing wiped. |
+| `mcp-custom` | CLIs + sandboxed `claude` + extra MCP servers on top of `lib.mcp.defaultServers`. |
+| `dev-env` | CLIs + sandboxed `claude` + opt-in Node.js / Playwright via `lib.devEnv.mk`. |
+| `home-manager` | **User-scope** install. Lives in `$HOME` and follows you across every repo, including sandboxed `claude`. See [home-manager.md](home-manager.md). |
 
 ## 4. Initialize the template
 
@@ -57,45 +57,45 @@ nix flake init -t github:fmgordillo-dyna/papanix-ai-template#minimal
 For `home-manager`, initialize in `~/.config/home-manager` instead of
 your project directory — see [home-manager.md](home-manager.md).
 
-## 5. Fill in the TODOs
+## 5. Review the generated markers
 
-Every template's `flake.nix` (and `home.nix` for `home-manager`) carries
-inline `# TODO:` markers for the user-editable knobs and `# NOTE:`
-markers for the safe-to-tweak ones.
+The generated files carry inline comments:
+
+- **Project templates** (`default`, `minimal`, `mcp-custom`, `dev-env`)
+  mainly use `# NOTE:` markers for safe customization.
+- **`home-manager`** also includes `# TODO:` markers for required,
+  machine-specific values.
 
 Common edits:
 
-- **Skills to enable** — either `enableAll = true` or
-  `enable = [ "papa/dt-jira" "rnd/dt-github" ]`. List the catalog:
-  ```bash
-  nix eval github:fmgordillo-dyna/papanix-ai#lib.skills.catalog \
-    --apply builtins.attrNames --json
-  ```
-- **Plugin marketplaces** (`plugins-custom`, `default`) — either
-  `enableAll = true` or curate with `enable = [ "papa/papa-jira" "rnd/dt-github" ]`.
-- **MCP servers** (`default`, `mcp-custom`, `home-manager`) — opt into
-  `lib.mcp.defaultServers` explicitly, then extend it with your own
-  `{ type; command; args; env; }` entries if needed.
-- **Sandboxed `claude`** — project templates (everything except
-  `library` and `home-manager`) include a local `mkSandbox { ... }`
-  block; tweak `allowedPackages`, `stateDirs`, `stateFiles`, `extraEnv`,
-  `restrictNetwork`, and `allowedDomains` there. The `home-manager`
-  template instead uses `programs.papanix-ai.sandboxing.*`, with safe
-  defaults already including the PAPA CLIs plus helpers like `git`,
-  `rg`, `fd`, `jq`, `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, and
-  `node`. If you are adding your own package attrset to a project
-  template, flatten it first with `builtins.attrValues myPkgs`;
-  `allowedPackages = [ myPkgs ];` will fail with `cannot coerce a set to
-  a string`.
-- **Dev environment** (`dev-env`) — toggle `nodejs`, `playwright`, and
-  `extraPackages` in the `lib.devEnv.mk` call.
-- **Home-Manager identity** (`home-manager`) — see
-  [home-manager.md → Filling in the TODOs](home-manager.md#filling-in-the-todos).
+- **CLI selection** — project templates define a `cliPackages` list
+  with the full PAPA CLI bundle (`acli-pii`, `aimgr`, `bbctl`, `dtctl`,
+  `junoctl`). Drop entries if you want a subset. Dropping `acli-pii`
+  lets you use pure builds.
+- **Sandboxed `claude`** — project templates include a local
+  `papanix-ai.lib.sandboxing.mkClaudeSandbox { ... }` block; tweak
+  `extraAllowedPackages`, `extraRwDirs`, `extraRoDirs`, `extraRwFiles`,
+  `extraRoFiles`, `extraEnv`, `restrictNetwork`, `allowedDomains`, and
+  `exposeSsh` there. The `home-manager` template instead uses
+  `programs.papanix-ai.sandboxing.*`, with safe defaults already
+  including the PAPA CLIs plus helpers like `git`, `rg`, `fd`, `jq`,
+  `curl`, `file`, `tree`, `tar`, `zip`, `unzip`, `node`, and `nix`.
+- **MCP servers** (`default`, `mcp-custom`) — `default` opts into
+  `lib.mcp.defaultServers`; `mcp-custom` shows how to extend that set
+  with your own `{ type; command; args; env; }` entries.
+- **Dev environment** (`dev-env`, optional in `default` / `home-manager`)
+  — toggle `nodejs`, `playwright`, and `extraPackages` in the
+  `lib.devEnv.mk` call.
+- **Home-Manager identity** (`home-manager`) — set `hmSystem`, rename
+  the `homeConfigurations."me"` key, and fill in `home.username` /
+  `home.homeDirectory`.
 
-> **For agents:** invoke `/papanix-ai-template-init` to walk the user
-> through these prompts and produce a fully-filled template.
+> **For agents:** invoke `/papanix-ai-template-init` for project-scope
+> templates or `/papanix-ai-home-manager-setup` for user scope.
 
-## 6. Enter the dev shell
+## 6. Enter the shell (or switch Home-Manager)
+
+Project templates:
 
 ```bash
 nix develop --impure
@@ -105,30 +105,50 @@ nix develop --impure
 at eval time). Drop the flag if you removed `acli-pii` from your CLI
 selection.
 
-On entry the chosen project template installs skills, drops MCP config
-files (`.mcp.json`, `opencode.jsonc`), writes a project-scope
-`.claude/settings.json`, and exposes a sandboxed `claude` on PATH. The
-repo-local files are **wiped on exit** — the template is the source of
-truth, not the generated files.
+Home-Manager:
 
-Smoke test:
+```bash
+nix run home-manager/master -- switch --flake .#me --impure
+```
+
+## 7. Smoke test
+
+Project templates:
 
 ```bash
 bbctl --version
+aimgr --version
 dtctl --version
 acli-pii --version
 junoctl --version
 claude --version
 ```
 
-(Replace with the subset you picked in your CLI selection.)
+Use the subset that matches your chosen package selection.
 
-## 7. Day-to-day
+For `default` and `mcp-custom`, you can also confirm MCP config was
+materialized inside the shell:
 
-- `nix develop --impure` — enter the shell.
-- `direnv allow` — if you want auto-activation on `cd` into the project.
-  Commit a `.envrc` containing `use flake --impure` and you're done.
-- `nix flake update` — bump the pinned papanix-ai revision.
+```bash
+test -f .mcp.json && echo ".mcp.json: ok"
+test -f opencode.jsonc && echo "opencode.jsonc: ok"
+```
+
+Home-Manager:
+
+```bash
+which bbctl aimgr dtctl acli-pii junoctl claude
+```
+
+## 8. Day-to-day
+
+- `nix develop --impure` — enter a project devShell.
+- `direnv allow` — if you want auto-activation on `cd` into the
+  project. Commit a `.envrc` containing `use flake --impure` and you're
+  done.
+- `nix flake update` — bump the pinned `papanix-ai` revision.
+- `cd ~/.config/home-manager && home-manager switch --flake .#<name> --impure`
+  — re-apply your user-scope config after editing it.
 
 ## Troubleshooting
 
@@ -137,9 +157,9 @@ claude --version
 - `Permission denied (publickey)` → SSH key not loaded
   (`ssh-add ~/.ssh/id_ed25519`) or not registered with Bitbucket.
 - `cannot run ssh: No such file or directory` → forgot `--impure`.
-- MCP servers missing → set `PAPANIX_DEBUG=1` before
-  `nix develop --impure` to print the generated config paths and
-  server list.
+- MCP servers missing in `default` / `mcp-custom` → set
+  `PAPANIX_DEBUG=1` before `nix develop --impure` to print the generated
+  config paths and server list.
 
 Anything more involved is in the per-topic doc:
 

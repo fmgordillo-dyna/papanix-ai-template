@@ -6,7 +6,7 @@
 #
 # Both .mcp.json and opencode.jsonc are wiped on shell exit.
 {
-  description = "papanix-ai: devShell with sandboxed claude + custom MCP servers";
+  description = "papanix-ai: devShell with sandboxed `claude` + custom MCP servers";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -27,53 +27,47 @@
           config.allowUnfree = true;
         };
 
+        cliPackages = with papanix-ai.packages.${system}; [
+          acli-pii
+          aimgr
+          bbctl
+          dtctl
+          junoctl
+        ];
+
         # NOTE: Customize the sandboxed `claude` wrapper here.
-        sandbox = import (papanix-ai + "/vendor/agent-sandbox-nix") {inherit pkgs;};
-        sandboxedClaude = sandbox.mkSandbox {
-          pkg = pkgs.claude-code;
-          binName = "claude";
-          outName = "claude";
-          # If you have your own package attrset, flatten it first:
-          #   builtins.attrValues myPkgs ++ (with pkgs; [ git ripgrep ])
-          # `allowedPackages = [ myPkgs ];` fails with "cannot coerce a set to a string".
-          allowedPackages = with pkgs; [
-            coreutils
-            which
-            git
-            ripgrep
-            fd
-            gnused
-            gnugrep
-            findutils
-            diffutils
-            less
-            gawk
-            jq
-            curl
-            nodejs
-          ];
-          stateDirs = [
-            "$HOME/.claude"
-            "$HOME/.npm"
-            "$HOME/.cache/claude"
-          ];
-          stateFiles = [];
-          extraEnv = {
-            CLAUDE_CODE_OAUTH_TOKEN = "$CLAUDE_CODE_OAUTH_TOKEN";
-            ANTHROPIC_API_KEY = "$ANTHROPIC_API_KEY";
-            GITHUB_TOKEN = "$GITHUB_TOKEN";
-            CLAUDE_CONFIG_DIR = "$HOME/.claude";
-            GIT_AUTHOR_NAME = "claude";
-            GIT_AUTHOR_EMAIL = "claude@localhost";
-            GIT_COMMITTER_NAME = "claude";
-            GIT_COMMITTER_EMAIL = "claude@localhost";
-          };
+        sandboxedClaude = papanix-ai.lib.sandboxing.mkClaudeSandbox {
+          inherit pkgs cliPackages;
+          claudePkg = pkgs.claude-code;
+
+          # NOTE: Safe defaults already include the selected PAPA CLIs plus
+          # common helpers like `git`, `rg`, `fd`, `jq`, `curl`, `file`,
+          # `tree`, `tar`, `zip`, `unzip`, `node`, and `nix`.
+          # extraAllowedPackages = with pkgs; [ gh kubectl ];
+
+          # NOTE: Persist extra tool state or individual config files.
+          # extraRwDirs = [ "$HOME/.config/gh" "$HOME/.kube" ];
+          # extraRwFiles = [ "$HOME/.kube/config" ];
+
+          # NOTE: Bind read-only config into the sandbox when needed.
+          # extraRoDirs = [ "$HOME/.config/some-readonly-tree" ];
+          # extraRoFiles = [ "$HOME/.gitconfig" ];
+
+          # NOTE: Pass extra env vars through to the sandboxed process.
+          # extraEnv = {
+          #   GH_TOKEN = "$GH_TOKEN";
+          #   KUBECONFIG = "$HOME/.kube/config";
+          # };
+
           restrictNetwork = false;
           # NOTE: Only used when `restrictNetwork = true;`.
           # allowedDomains = {
-          #   "api.anthropic.com" = true;
-          #   "github.com" = true;
+          #   "github.com" = [ "GET" "HEAD" ];
+          #   "api.anthropic.com" = "*";
           # };
+
+          # NOTE: Enable if Claude needs SSH remotes from inside the sandbox.
+          # exposeSsh = true;
         };
 
         # NOTE: Extend the default server set instead of replacing it,
@@ -98,10 +92,7 @@
         packages = papanix-ai.packages.${system};
 
         devShells.default = pkgs.mkShellNoCC {
-          packages = [
-            papanix-ai.packages.${system}.default
-            sandboxedClaude
-          ];
+          packages = cliPackages ++ [sandboxedClaude];
           shellHook = papanix-ai.lib.mcp.mkShellHook {
             inherit pkgs;
             servers = mcpServers;

@@ -1,6 +1,6 @@
 # Auth setup
 
-Three of the four PAPA CLIs need credentials before they can build:
+Three of the five PAPA CLIs need credentials before they can build:
 
 | Package    | Source                                   | Credential                  |
 |------------|------------------------------------------|-----------------------------|
@@ -8,7 +8,7 @@ Three of the four PAPA CLIs need credentials before they can build:
 | `bbctl`    | private GitHub repo (Dynatrace-Internal) | GitHub PAT in `nix.conf`    |
 | `junoctl`  | private GitHub repo (Dynatrace-Internal) | GitHub PAT in `nix.conf`    |
 
-`dtctl` is public and needs no auth.
+`aimgr` and `dtctl` are public and need no auth.
 
 `acli-pii` fetches its source at build time using your SSH credentials — Nix needs `--impure` to reach your SSH agent. `bbctl` and `junoctl` fetch from GitHub via `builtins.fetchTree` and use a PAT stored in your Nix config; no `--impure` required.
 
@@ -80,13 +80,14 @@ Common errors:
 ## Verifying everything works
 
 ```bash
-nix build github:fmgordillo-dyna/papanix-ai#bbctl \
+nix build github:fmgordillo-dyna/papanix-ai#aimgr \
+          github:fmgordillo-dyna/papanix-ai#bbctl \
           github:fmgordillo-dyna/papanix-ai#dtctl \
           github:fmgordillo-dyna/papanix-ai#junoctl  # no --impure needed
 nix build github:fmgordillo-dyna/papanix-ai#acli-pii --impure  # needs SSH credentials
 ```
 
-All four should produce `result*` symlinks with no errors.
+All five should produce `result*` symlinks with no errors if you build them, or at least the subset you plan to use.
 
 ## Next
 
@@ -97,5 +98,5 @@ nix flake init -t github:fmgordillo-dyna/papanix-ai-template
 nix develop --impure
 ```
 
-See the [template README](../README.md) for the full list of starters and
-the per-template `TODO:` markers you need to fill in.
+See the [template README](../README.md) for the full list of templates and
+the generated `# NOTE:` / `# TODO:` markers you may need to review.
